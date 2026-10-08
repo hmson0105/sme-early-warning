@@ -1514,6 +1514,18 @@ const colors = {
   red: '#E74C3C', green: '#27AE60', purple: '#8E44AD', pink: '#E91E63',
   yellow: '#F39C12', gray: '#95A5A6'
 };
+/* 데이터 파일은 항상 최신을 읽는다.
+   GitHub Pages 가 파일에 10분 캐시를 주기 때문에, 수집 스크립트를 다시 돌린
+   직후에는 브라우저가 이전 파일을 계속 쓴다. 자료만 바뀐 경우라면 수치가
+   잠깐 옛날 값으로 보이는 정도지만, 구조가 바뀌면 화면이 멈춘다.
+   파일이 다 합쳐 300KB 안쪽이라 매번 새로 받아도 부담이 없다. */
+function loadData(name) {
+  return fetch('data/' + name + '?t=' + Date.now()).then(function (r) {
+    if (!r.ok) throw new Error(name + ' ' + r.status);
+    return r.json();
+  });
+}
+
 /* ── 뉴스 담론 ────────────────────────────────────────────────
    예전에는 토픽 결과를 코드에 적어 두었다. 크롤링을 다시 돌려도
    화면 숫자가 그대로 남아 실제와 어긋났다. 이제 data/topic.json 을
@@ -1526,7 +1538,7 @@ const colors = {
    기사 수를 두면 그 영향이 상쇄되고 기사 한 건당 관심도만 남는다. */
 const topicColors = [colors.blue, colors.red, colors.orange, colors.green, colors.purple];
 
-fetch('data/topic.json').then(r => r.json()).then(T => {
+loadData('topic.json').then(T => {
   var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
   var labels = T.topics.map(function (t, i) {
     return 'T' + (i + 1) + ' ' + t.keywords.slice(0, 2).join('·');
@@ -1607,7 +1619,7 @@ fetch('data/topic.json').then(r => r.json()).then(T => {
 const fmtT = t => t.length === 6 ? `${t.slice(2,4)}.${t.slice(4,6)}` : t;
 const pick = (obs, from) => obs.filter(o => o.t >= from);
 
-fetch('data/ecos.json').then(r => r.json()).then(E => {
+loadData('ecos.json').then(E => {
   const S = E.series;
   const A = E.analysis;   // 타임라인·상관·게이지가 모두 참조하므로 먼저 선언한다
   document.querySelectorAll('[data-ecos-date]').forEach(el => {
@@ -2021,7 +2033,7 @@ fetch('data/ecos.json').then(r => r.json()).then(E => {
    nacham.json 은 build_nacham.py 가 만든다. 전국 사유 비중(실적)과
    시도별 추정치(대리지표)를 함께 담고 있다. 화면에서도 둘을 구분해
    표기한다 — 추정치를 실적처럼 보이게 하지 않는다.             */
-fetch('data/nacham.json').then(r => r.json()).then(N => {
+loadData('nacham.json').then(N => {
   var pct = function (n, d) { return (n / d * 100).toFixed(1) + '%'; };
   var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
 
@@ -2147,8 +2159,8 @@ fetch('data/nacham.json').then(r => r.json()).then(N => {
 }).catch(function (e) { console.warn('nacham.json 로드 실패', e); });
 
 Promise.all([
-  fetch('data/region.json').then(r => r.json()),
-  fetch('data/kmap.json').then(r => r.json())
+  loadData('region.json'),
+  loadData('kmap.json')
 ]).then(([R, M]) => {
   const svg = document.getElementById('kmap');
   const selInd = document.getElementById('map-ind');
@@ -2404,7 +2416,7 @@ Promise.all([
    "누구에게, 언제, 무슨 말을 하느냐"다. nacham.json 의
    applications(해지 신청 명세 집계)와 regions(지역 추정)를 묶어
    그 세 가지를 한 화면에서 답한다. */
-fetch('data/nacham.json').then(r => r.json()).then(function (N) {
+loadData('nacham.json').then(function (N) {
   var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
   var won = function (n) { return n == null ? '—' : n.toLocaleString(); };
   var A = N.applications;
