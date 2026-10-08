@@ -1,0 +1,8 @@
+# 수집 원본·캐시 (저장소에 올리지 않는다)
+*.csv
+.env
+keys.env
+analysis/_kmap_src.json
+analysis/_nacham_src.csv
+analysis/raw/
+.DS_Store

@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>중소기업 위기 조기경보 대시보드</title>
+<meta name="description" content="공개 API로 수집한 24개 지표와 뉴스 762건을 결합해 중소기업 부실의 선행 신호를 추적하고, 내일채움공제 해지 위험을 시도별로 추정한 대시보드.">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a2332; }
+.header { background: linear-gradient(135deg, #1B3A5C 0%, #2E75B6 100%); color: white; padding: 32px 40px; }
+.header h1 { font-size: 28px; margin-bottom: 8px; }
+.header p { font-size: 14px; opacity: 0.85; }
+.stats-bar { display: flex; gap: 16px; padding: 20px 40px; background: white; border-bottom: 1px solid #e0e7ef; flex-wrap: wrap; }
+.stat-card { flex: 1; min-width: 120px; text-align: center; padding: 12px; border-radius: 8px; background: #f7fafc; }
+.stat-card .num { font-size: 28px; font-weight: 700; color: #2E75B6; }
+.stat-card .label { font-size: 12px; color: #666; margin-top: 4px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 40px; }
+.section { margin-bottom: 32px; }
+.section h2 { font-size: 20px; color: #1B3A5C; margin-bottom: 4px; border-left: 4px solid #2E75B6; padding-left: 12px; }
+.section .subtitle { font-size: 13px; color: #888; margin-bottom: 16px; padding-left: 16px; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.chart-box { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.chart-box.full { grid-column: 1 / -1; }
+.chart-box h3 { font-size: 15px; color: #444; margin-bottom: 12px; }
+.insight { background: #EBF2F8; border-radius: 8px; padding: 16px; margin-top: 12px; font-size: 13px; line-height: 1.6; color: #333; }
+.insight strong { color: #1B3A5C; }
+.notice { background: #FFF4E5; border-left: 4px solid #FF8C42; border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: #6b4423; margin-bottom: 24px; }
+.notice strong { color: #b35309; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #1B3A5C; color: white; padding: 8px 12px; text-align: center; }
+td { padding: 7px 12px; border-bottom: 1px solid #e8ecf0; text-align: center; }
+td.left { text-align: left; }
+tr:nth-child(even) { background: #f7fafc; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin: 1px; }
+.tag-t1 { background: #e3f2fd; color: #1565c0; }
+.tag-t2 { background: #fce4ec; color: #c62828; }
+.tag-t3 { background: #fff3e0; color: #e65100; }
+.tag-t4 { background: #e8f5e9; color: #2e7d32; }
+.tag-t5 { background: #f3e5f5; color: #6a1b9a; }
+.method-box { background: #1B3A5C; color: #dbe7f3; border-radius: 12px; padding: 20px; font-size: 13px; line-height: 1.7; }
+.method-box h3 { color: white; font-size: 15px; margin-bottom: 10px; }
+.method-box code { background: rgba(255,255,255,.12); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+canvas { max-height: 320px; }
+.src { font-size: 11px; color: #94a3b8; margin-top: 8px; }
+.footer a { color: #2E75B6; }
+.footer { padding: 24px 40px 48px; text-align: center; font-size: 12px; color: #8a9ab0; }
+@media (max-width: 860px) {
+  .chart-grid { grid-template-columns: 1fr; }
+  .container, .header, .stats-bar { padding-left: 20px; padding-right: 20px; }
+}
+
+/* ---------- 모바일 대응 ---------- */
+@media (max-width: 680px) {
+  .container, .header, .stats-bar, .footer { padding-left: 16px !important; padding-right: 16px !important; }
+  .header h1 { font-size: 21px; line-height: 1.35; }
+  .header p { font-size: 12.5px; }
+  .stats-bar { gap: 10px; }
+  .stat-card { min-width: calc(50% - 6px); flex: 1 1 calc(50% - 6px); padding: 10px 8px; }
+  .stat-card .num { font-size: 20px; }
+  .stat-card .label { font-size: 11px; }
+  .section h2 { font-size: 17px; }
+  .section .subtitle { font-size: 12px; }
+  .chart-box { padding: 14px; }
+  .chart-box h3 { font-size: 13.5px; }
+  .insight, .notice, .method-box { font-size: 12.5px; padding: 13px 14px; }
+  canvas { max-height: 250px; }
+  table { font-size: 11.5px; }
+  th, td { padding: 6px 8px; }
+  .chart-box table, .table-scroll { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .ace-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 359px) {
+  .stat-card { min-width: 100%; flex: 1 1 100%; }
+  .header h1 { font-size: 19px; }
+}
+
+/* ---------- 모바일 가로 넘침 방지 ---------- */
+.chart-grid > *, .stat-grid > *, .criteria-grid > *, .app-grid > *,
+.ace-grid > *, .atlas > *, .chart-box, .section { min-width: 0; }
+img, svg, canvas { max-width: 100%; }
+@media (max-width: 680px) {
+  body { overflow-x: hidden; }
+  .chart-box table, .table-scroll, table { display: block; width: 100%;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  #quad-legend, #app-quad-legend { grid-template-columns: 1fr 1fr !important; }
+  .atlas { grid-template-columns: 1fr !important; }
+  pre, code { white-space: pre-wrap; word-break: break-word; }
+}
+
+/* ---------- 상단바: 고정 + 뒤로가기 ---------- */
+@media (max-width: 680px) {
+}
+
+/* ── 종합 현황 패널 ───────────────────────────────── */
+.status { background: #fff; border-bottom: 1px solid #e0e7ef; padding: 26px 40px 30px; }
+.status-grid { display: grid; grid-template-columns: 300px 1fr; gap: 34px; align-items: center;
+               max-width: 1240px; margin: 0 auto; }
+.gauge-wrap { text-align: center; }
+.gauge-val { font-size: 40px; font-weight: 700; line-height: 1.1; margin-top: -46px; }
+.gauge-lv { font-size: 14px; font-weight: 600; letter-spacing: .04em; margin-top: 4px; }
+.gauge-sub { font-size: 11.5px; color: #8a9ab0; margin-top: 6px; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.kpi { border: 1px solid #e6ebf2; border-radius: 10px; padding: 13px 15px; background: #fbfcfe; }
+.kpi .k { font-size: 11px; color: #7c8ca3; letter-spacing: .02em; }
+.kpi .v { font-size: 23px; font-weight: 700; color: #1B3A5C; margin-top: 3px; line-height: 1.15; }
+.kpi .u { font-size: 11px; color: #8a9ab0; font-weight: 400; margin-left: 2px; }
+.kpi .d { font-size: 11.5px; margin-top: 4px; font-weight: 600; }
+.d.up { color: #E74C3C; } .d.down { color: #2E75B6; } .d.flat { color: #94a3b8; }
+.legend-bands { display: flex; gap: 12px; justify-content: center; margin-top: 10px; font-size: 10.5px; color: #7c8ca3; }
+.legend-bands i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 3px; }
+@media (max-width: 900px) {
+  .status { padding: 20px 16px 24px; }
+  .status-grid { grid-template-columns: 1fr; gap: 20px; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+/* 상관 매트릭스 */
+.corr-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.corr-tbl th { background: #1B3A5C; color: #fff; padding: 7px 9px; position: sticky; top: 0; }
+.corr-tbl td { padding: 6px 9px; border-bottom: 1px solid #eef2f6; }
+.corr-bar { height: 15px; border-radius: 3px; display: inline-block; vertical-align: middle; }
+.corr-grp { font-size: 10.5px; color: #7c8ca3; }
+
+/* ── 타임라인 구간 선택 ─────────────────────────── */
+.tl-hint { font-size: 11px; color: #94a3b8; margin-top: 8px; }
+.evt-list { margin-top: 14px; border-top: 1px solid #e8ecf0; }
+.evt-item { display: grid; grid-template-columns: 74px 92px 1fr; gap: 12px; padding: 9px 0;
+            border-bottom: 1px solid #f1f4f8; font-size: 12.5px; align-items: baseline; }
+.evt-item .dt { color: #7c8ca3; font-variant-numeric: tabular-nums; }
+.evt-item .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 3px; text-align: center; font-weight: 600; }
+.evt-item .tx { color: #44566e; line-height: 1.5; }
+.evt-item.dim { opacity: .38; }
+@media (max-width: 680px) { .evt-item { grid-template-columns: 62px 1fr; } .evt-item .tag { display: none; } }
+
+/* ── 기간 범위 슬라이더 (이중 핸들) ─────────────── */
+.rng { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.rng-label { font-size: 12px; color: #44566e; font-weight: 600; white-space: nowrap; }
+.rng-val { font-size: 12px; color: #1B3A5C; font-variant-numeric: tabular-nums;
+           white-space: nowrap; min-width: 116px; }
+.rng-wrap { position: relative; flex: 1; height: 22px; }
+.rng-track { position: absolute; top: 9px; left: 0; right: 0; height: 4px;
+             background: #dfe6ee; border-radius: 2px; }
+.rng-fill { position: absolute; top: 0; height: 100%; background: #2E75B6; border-radius: 2px; }
+.rng-slider { position: absolute; top: 0; left: 0; width: 100%; height: 22px; margin: 0;
+              -webkit-appearance: none; appearance: none; background: none; pointer-events: none; }
+.rng-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; cursor: grab;
+  width: 15px; height: 15px; border-radius: 50%; background: #fff;
+  border: 2.5px solid #1B3A5C; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.rng-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+.rng-slider::-moz-range-thumb {
+  pointer-events: auto; cursor: grab; width: 15px; height: 15px; border: 2.5px solid #1B3A5C;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.rng-reset { font-size: 11.5px; color: #7c8ca3; background: none; border: none;
+             cursor: pointer; padding: 3px 6px; white-space: nowrap; }
+.rng-reset:hover { color: #1B3A5C; text-decoration: underline; }
+@media (max-width: 680px) {
+  .rng { flex-wrap: wrap; gap: 8px; }
+  .rng-wrap { flex: 1 1 100%; order: 3; }
+}
+
+/* ── 분석 결과 섹션 ─────────────────────────────── */
+.eyebrow-num { font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+               color: #8a9ab0; font-weight: 600; margin-bottom: 6px; }
+.find { border-left: 3px solid #2E75B6; padding: 2px 0 2px 16px; margin-bottom: 22px; }
+.find h4 { font-size: 15px; color: #1B3A5C; margin-bottom: 7px; }
+.find p { font-size: 13px; color: #44566e; line-height: 1.68; margin: 0; }
+.find .num { font-weight: 700; color: #1B3A5C; }
+.find.warn { border-left-color: #E74C3C; }
+.find.warn h4 { color: #b23b2e; }
+
+.nc-w { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid #ECEDEA; }
+.nc-w span { font-size:12.5px; color:#4D5258; background:#F4F7FA; border-radius:999px; padding:5px 11px; }
+.nc-w span b { color:#2E75B6; }
+
+.impl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 6px; }
+.impl { background: #f7fafc; border-radius: 9px; padding: 15px 16px; }
+.impl h5 { font-size: 12.5px; color: #1B3A5C; margin-bottom: 6px; letter-spacing: .02em; }
+.impl p { font-size: 12.5px; color: #55677d; line-height: 1.6; margin: 0; }
+.lim { font-size: 12.5px; color: #55677d; line-height: 1.7; }
+.lim li { margin-bottom: 7px; }
+@media (max-width: 860px) { .impl-grid { grid-template-columns: 1fr; } }
+
+/* ── 지역 카토그램 ─────────────────────────────── */
+.map-wrap { display: grid; grid-template-columns: 1fr 236px; gap: 22px; align-items: start; }
+.map-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+.map-ctl select { font-size: 12px; padding: 5px 9px; border: 1px solid #d5dde8; border-radius: 6px;
+                  background: #fff; color: #33475c; }
+.map-ctl label { font-size: 11.5px; color: #7c8ca3; }
+.cart { width: 100%; height: auto; }
+.kmap-p { cursor: pointer; transition: opacity .15s; }
+.kmap-p:hover { opacity: .75; }
+.kmap-p.sel { stroke: #1a2332; stroke-width: 2.2; }
+.cart-cell { cursor: pointer; transition: opacity .15s; }
+.cart-cell:hover { opacity: .78; }
+.cart-cell.sel rect { stroke: #1a2332; stroke-width: 2.4; }
+.map-side h4 { font-size: 12.5px; color: #1B3A5C; margin-bottom: 8px; }
+.map-side .mrow { display: flex; justify-content: space-between; font-size: 12px;
+                  padding: 6px 0; border-bottom: 1px solid #eef2f6; color: #55677d; }
+.map-side .mrow b { color: #1B3A5C; font-variant-numeric: tabular-nums; }
+.map-legend { margin-top: 12px; font-size: 11px; color: #7c8ca3; }
+.map-legend .bar { height: 10px; border-radius: 2px; margin: 5px 0 3px;
+                   background: linear-gradient(90deg,#e8f1f8,#7fb3d9,#2E75B6,#1B3A5C); }
+.map-legend .ends { display: flex; justify-content: space-between; }
+@media (max-width: 860px) { .map-wrap { grid-template-columns: 1fr; } }
+
+/* ── 리포트 문체 요약 블록 ──────────────────────── */
+.summary-box { background: #f5f8fc; border: 1px solid #dde6f0; border-radius: 10px;
+               padding: 18px 20px; margin-bottom: 22px; }
+.summary-box h4 { font-size: 13px; color: #1B3A5C; margin-bottom: 10px; letter-spacing: .02em; }
+.summary-box ul { margin: 0; padding-left: 17px; }
+.summary-box li { font-size: 13px; color: #44566e; line-height: 1.72; margin-bottom: 6px; }
+.summary-box li:last-child { margin-bottom: 0; }
+.summary-box b { color: #1B3A5C; }
+.find .lead-in { display: block; font-size: 13px; color: #1B3A5C; font-weight: 600;
+                 margin-bottom: 6px; line-height: 1.6; }
+.find .basis { display: block; font-size: 12.5px; color: #5b6e85; line-height: 1.68; }
+.find .caveat { display: block; font-size: 12px; color: #8a7350; background: #fdf8ef;
+                border-radius: 5px; padding: 8px 11px; margin-top: 9px; line-height: 1.6; }
+
+/* ── 카드뉴스형 도입부 ─────────────────────────── */
+.cardnews { display: grid; gap: 14px; }
+.cn-3 { grid-template-columns: repeat(3, 1fr); }
+.cn-2 { grid-template-columns: repeat(2, 1fr); }
+.cn-card { background: #fff; border: 1px solid #e3eaf2; border-radius: 12px;
+           padding: 20px 21px; position: relative; overflow: hidden; }
+.cn-card .no { font-size: 34px; font-weight: 800; color: #eaf1f8; line-height: 1;
+               position: absolute; right: 14px; top: 10px; }
+.cn-card h4 { font-size: 14.5px; color: #1B3A5C; margin-bottom: 9px; position: relative; }
+.cn-card p { font-size: 13px; color: #55677d; line-height: 1.68; margin: 0; position: relative; }
+.cn-card b { color: #1B3A5C; }
+.cn-card.accent { background: linear-gradient(135deg,#1B3A5C,#2E75B6); border-color: transparent; }
+.cn-card.accent h4, .cn-card.accent p { color: #fff; }
+.cn-card.accent p { color: #cfe0ef; }
+.cn-card.accent .no { color: rgba(255,255,255,.16); }
+.cn-card.accent b { color: #fff; }
+
+.rq { display: grid; grid-template-columns: 62px 1fr; gap: 16px; align-items: start;
+      padding: 16px 0; border-bottom: 1px solid #eef2f6; }
+.rq:last-child { border-bottom: none; }
+.rq .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #fff;
+           background: #2E75B6; border-radius: 5px; padding: 5px 0; text-align: center; }
+.rq .q { font-size: 14px; color: #1B3A5C; font-weight: 600; margin-bottom: 5px; line-height: 1.5; }
+.rq .a { font-size: 12.5px; color: #5b6e85; line-height: 1.62; }
+.rq .a b { color: #2E75B6; }
+
+.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 4px; }
+.flow-step { background: #f7fafc; border-radius: 9px; padding: 14px 13px; position: relative; }
+.flow-step .n { font-size: 10.5px; font-weight: 700; color: #2E75B6; letter-spacing: .08em; }
+.flow-step h5 { font-size: 12.5px; color: #1B3A5C; margin: 5px 0 5px; }
+.flow-step p { font-size: 11.5px; color: #6b7e94; line-height: 1.55; margin: 0; }
+.flow-step::after { content: "→"; position: absolute; right: -9px; top: 50%;
+                    transform: translateY(-50%); color: #c3d0de; font-size: 13px; }
+.flow-step:last-child::after { display: none; }
+
+.srctbl { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 4px; }
+.srctbl th { background: #f2f6fa; color: #44566e; padding: 9px 11px; text-align: left;
+             font-weight: 600; border-bottom: 1px solid #e3eaf2; }
+.srctbl td { padding: 9px 11px; border-bottom: 1px solid #f1f4f8; color: #55677d; }
+.srctbl td b { color: #1B3A5C; }
+.srctbl code { background: #f2f6fa; padding: 1px 5px; border-radius: 3px; font-size: 11.5px; }
+@media (max-width: 900px) {
+  .cn-3, .cn-2 { grid-template-columns: 1fr; }
+  .flow { grid-template-columns: 1fr 1fr; }
+  .flow-step::after { display: none; }
+  .rq { grid-template-columns: 54px 1fr; gap: 11px; }
+}
+
+.st-badge { font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+            white-space: nowrap; display: inline-block; }
+.st-done { background: #e6f4ea; color: #1e7e42; }
+.st-part { background: #fff4e5; color: #9a6400; }
+.st-todo { background: #f1f3f5; color: #6b7280; }
+.st-note { font-size: 11px; color: #8a9ab0; margin-top: 3px; display: block; }
+
+/* ===========================================================
+   읽기 쉬운 레이아웃 — 본문 18px, 넉넉한 행간, 절제된 색
+   =========================================================== */
+body { background: #FBFBFA; color: #181A1D; font-size: 17px; line-height: 1.62; }
+.container { max-width: 1120px; }
+
+.section { margin-bottom: 44px; }
+.section h2 {
+  font-size: 27px; font-weight: 700; line-height: 1.32; color: #181A1D;
+  border-left: none; padding-left: 0; margin-bottom: 10px; letter-spacing: -.01em;
+}
+.section .subtitle {
+  font-size: 17px; line-height: 1.66; color: #4D5258;
+  padding-left: 0; margin-bottom: 22px; max-width: 74ch;
+}
+.eyebrow-num { font-size: 12px; letter-spacing: .12em; color: #2E75B6; font-weight: 700; margin-bottom: 7px; }
+
+.chart-box { background: #fff; border: 1px solid #ECEDEA; border-radius: 12px;
+             padding: 24px; box-shadow: none; }
+.chart-box h3 { font-size: 17px; font-weight: 700; color: #181A1D; margin-bottom: 14px; }
+.chart-grid { gap: 20px; }
+
+/* 차트 아래 해설 — 레퍼런스의 '읽는 법' 패턴 */
+.readme { background: #F4F7FA; border-radius: 9px; padding: 15px 17px; margin-top: 16px; }
+.readme .k { font-size: 12px; font-weight: 700; color: #2E75B6; letter-spacing: .06em;
+             display: block; margin-bottom: 6px; }
+.readme p { font-size: 15.5px; line-height: 1.72; color: #3C434A; margin: 0; }
+.readme p + p { margin-top: 9px; }
+.readme b { color: #181A1D; font-weight: 700; }
+.readme .plain { color: #6B7280; font-size: 14.5px; display: block; margin-top: 8px; }
+
+.insight { background: #F4F7FA; border-radius: 9px; padding: 16px 18px;
+           font-size: 15.5px; line-height: 1.72; color: #3C434A; }
+.notice { font-size: 15.5px; line-height: 1.72; padding: 16px 18px; }
+.src { font-size: 12.5px; color: #8A9199; margin-top: 10px; }
+.stat-card .num { font-size: 30px; }
+.stat-card .label { font-size: 13px; color: #6B7280; }
+.header h1 { font-size: 32px; line-height: 1.3; }
+.header p { font-size: 16px; }
+table { font-size: 15px; }
+.srctbl { font-size: 14.5px; }
+.srctbl th, .srctbl td { padding: 11px 13px; }
+
+@media (max-width: 680px) {
+  body { font-size: 16px; }
+  .section h2 { font-size: 22px; }
+  .section .subtitle { font-size: 15.5px; }
+  .readme p { font-size: 14.5px; }
+  .chart-box { padding: 17px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>중소기업 위기 조기경보 대시보드</h1>
+  <p>뉴스 토픽모델링 × 거시·재무·신용·지역 지표를 결합한 24개 지표 조기경보 체계 | Pilot Study (2026)</p>
+</div>
+
+
+<div class="status">
+  <div class="status-grid">
+    <div class="gauge-wrap">
+      <canvas id="gauge" height="150"></canvas>
+      <div class="gauge-val" id="gauge-val">—</div>
+      <div class="gauge-lv" id="gauge-lv">—</div>
+      <div class="gauge-sub" id="gauge-sub">—</div>
+      <div class="legend-bands">
+        <span><i style="background:#2E75B6"></i>안정</span>
+        <span><i style="background:#27AE60"></i>주의</span>
+        <span><i style="background:#F39C12"></i>경계</span>
+        <span><i style="background:#E74C3C"></i>위험</span>
+      </div>
+    </div>
+    <div>
+      <div class="kpi-row" id="kpi-row"></div>
+      <div class="insight" style="margin-top:14px;font-size:12.5px">
+        <strong>종합 위기지수</strong>는 수집한 <strong id="n-ind">—</strong>개 지표를 전년동월대비 변화로 바꾼 뒤,
+        위험 방향을 맞춰 표준화(z-score)하고 평균한 값이다. 0보다 클 경우 지표들이 평균 대비 위험한 방향에 위치함을 의미한다.
+        수준(level) 값을 그대로 사용할 경우 추세만으로 상관이 높게 산출되므로 변화율로 환산하여 계산하였다.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="num">762</div><div class="label">분석 뉴스 기사 (중복 제거)</div></div>
+  <div class="stat-card"><div class="num">10</div><div class="label">크롤링 검색 쿼리</div></div>
+  <div class="stat-card"><div class="num">5</div><div class="label">LDA 토픽</div></div>
+  <div class="stat-card"><div class="num">265</div><div class="label">분석 어휘 수</div></div>
+  <div class="stat-card"><div class="num">24</div><div class="label">수집 지표 계열</div></div>
+</div>
+
+<div class="container">
+
+  <div class="notice">
+    <strong>데이터 안내.</strong> 분석 1의 뉴스 데이터는 Google News RSS에서 실제로 수집한 762건(2026년 9월 17일 기준)을
+    직접 토픽모델링한 결과입니다. 분석 2·3의 거시·신용지표는 <strong>한국은행 ECOS·통계청 KOSIS 오픈API로 직접 수집</strong>했습니다(수집일 <span data-ecos-date>—</span>, 10개 계열 1,030개 관측치). 통계표·항목 코드는 각 차트 아래에 표기했고, 수집 스크립트 <code>analysis/collect_ecos.py</code>를 다시 실행하면 최신 통계로 갱신됩니다.
+    다만 RSS는 최신 기사 비중이 높아, 월별 기사 수의 절대량은 시점 간 직접 비교보다 <strong>토픽 구성 변화</strong>를 읽는 데
+    활용하는 것이 적절합니다.
+  </div>
+
+  <!-- 01 연구 목적 -->
+  <div class="section">
+    <div class="eyebrow-num">01 · Research Purpose</div>
+    <h2>분석 배경 및 목적</h2>
+    <div class="subtitle">중소기업 부실은 사후에 통계로 확인된다. 부실이 표면화되기 이전 단계에서 포착 가능한 선행 신호를 식별하는 것이 본 분석의 목적이다.</div>
+
+    <div class="cardnews cn-3">
+      <div class="cn-card">
+        <span class="no">01</span>
+        <h4>문제</h4>
+        <p>연체율·폐업률은 <b>사후 결과</b>를 기록한 지표이다. 통계 공표 시점에는 이미 지원 적기가 경과한 경우가 많아, 실무상 개입 시점 판단에 활용하기 어렵다.</p>
+      </div>
+      <div class="cn-card">
+        <span class="no">02</span>
+        <h4>착안</h4>
+        <p>부실은 단계적으로 진행된다. <b>인식 → 심리 → 실물 → 신용</b> 순으로 전이되므로, 선행 단계를 관측할 수 있다면 후행 단계에 대한 예고 신호로 활용 가능하다.</p>
+      </div>
+      <div class="cn-card accent">
+        <span class="no">03</span>
+        <h4>목표</h4>
+        <p>공개 API로 수집 가능한 지표를 광범위하게 확보한 뒤, <b>연체율에 선행하는 지표</b>를 식별하여 단일 조기경보 지수로 통합한다.</p>
+      </div>
+    </div>
+
+    <div class="insight" style="margin-top:16px;font-size:12.5px">
+      <strong>분석의 성격.</strong> 본 분석은 인과관계 규명이 아니라 <strong>지표 선정을 위한 탐색적 분석(exploratory analysis)</strong>에 해당한다. 도출된 결과는 가설 수준이며, 확정을 위해서는 인과검정 및 업종·규모별 세분화가 요구된다.
+    </div>
+  </div>
+
+  <!-- 02 연구 질문 -->
+  <div class="section">
+    <div class="eyebrow-num">02 · Research Questions</div>
+    <h2>연구 질문</h2>
+    <div class="subtitle">각 연구 질문은 대시보드의 해당 분석 화면과 1:1로 대응한다.</div>
+
+    <div class="chart-box full">
+      <div class="rq">
+        <span class="tag">RQ 0</span>
+        <div>
+          <div class="q">모은 지표 중 무엇이 실제로 중소기업 부실과 함께 움직이는가?</div>
+          <div class="a">→ 24개 지표를 전년동월대비 변화로 바꿔 연체율과의 상관과 시차를 계산.
+            <b>지표 풀과 상관 구조</b> 화면.</div>
+        </div>
+      </div>
+      <div class="rq">
+        <span class="tag">RQ 1</span>
+        <div>
+          <div class="q">뉴스에 드러나는 위기 담론은 어떤 주제로 구성되며 어떻게 변하는가?</div>
+          <div class="a">→ 뉴스 762건을 토픽모델링(LDA)해 5개 주제로 분해.
+            <b>분석 1: 위기인식지수</b> 화면.</div>
+        </div>
+      </div>
+      <div class="rq">
+        <span class="tag">RQ 2</span>
+        <div>
+          <div class="q">뉴스에서 감지된 위기 인식이 실제 재무 지표로 확인되는가?</div>
+          <div class="a">→ 연체율·대출금리·실물지표를 같은 기간으로 놓고 대조.
+            <b>분석 2: 재무·신용 지표</b> 화면.</div>
+        </div>
+      </div>
+      <div class="rq">
+        <span class="tag">RQ 3</span>
+        <div>
+          <div class="q">개별 기업 부실과 지정학·통상 충격은 신용지표에 어떻게 전이되는가?</div>
+          <div class="a">→ 일자가 확인된 충격 사건을 연체율 시계열 위에 겹쳐 대조.
+            <b>분석 3: 타임라인</b> 화면.</div>
+        </div>
+      </div>
+      <div class="rq">
+        <span class="tag">RQ 4</span>
+        <div>
+          <div class="q">산업 구성이 다른 지역 사이에 신용 위험은 어떻게 갈리는가?</div>
+          <div class="a">→ 17개 시도의 산업별 사업체 비중과 중소기업 연체율을 결합.
+            <b>지역별 산업 구조와 신용 지표</b> 화면.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 데이터 수집 -->
+  <div class="section">
+    <div class="eyebrow-num">03 · Data Collection</div>
+    <h2>데이터 수집 방법</h2>
+    <div class="subtitle">전 항목을 공개 API 및 공개 RSS에서 직접 수집하였다. 수치를 코드에 직접 입력한 항목은 없다.</div>
+
+    <div class="flow">
+      <div class="flow-step"><div class="n">STEP 1</div><h5>지표 후보 선정</h5>
+        <p>부실과 연관될 만한 계열을 넓게 훑어 통계표·항목 코드를 특정</p></div>
+      <div class="flow-step"><div class="n">STEP 2</div><h5>API 수집</h5>
+        <p>ECOS·KOSIS 호출. 재시도와 중복 시점 검사를 내장</p></div>
+      <div class="flow-step"><div class="n">STEP 3</div><h5>전처리</h5>
+        <p>전년동월대비 변화로 변환해 추세 제거</p></div>
+      <div class="flow-step"><div class="n">STEP 4</div><h5>상관·시차 분석</h5>
+        <p>시차 0~6개월을 모두 시도해 선행성이 큰 지점 탐색</p></div>
+      <div class="flow-step"><div class="n">STEP 5</div><h5>지수화·시각화</h5>
+        <p>방향 정렬 후 표준화해 평균, JSON 산출</p></div>
+    </div>
+
+    <div class="chart-box full" style="margin-top:16px">
+      <table class="srctbl">
+        <thead><tr><th style="width:23%">출처</th><th style="width:30%">수집 내용</th>
+          <th style="width:17%">규모</th><th>스크립트</th></tr></thead>
+        <tbody>
+          <tr><td><b>한국은행 ECOS</b><br><span class="corr-grp">오픈API</span></td>
+              <td>연체율·대출금리·기준금리·어음부도율·BSI·심리지수·생산·설비투자·재고율·가동률·수출입</td>
+              <td>22개 계열<br>2,288 관측치</td>
+              <td><code>collect_ecos.py</code></td></tr>
+          <tr><td><b>통계청 KOSIS</b><br><span class="corr-grp">오픈API</span></td>
+              <td>중소기업 경기동행종합지수 / 시도·산업별 사업체수·종사자수·매출액</td>
+              <td>2개 계열<br>18개 시도 × 94개 산업</td>
+              <td><code>collect_ecos.py</code><br><code>collect_region.py</code></td></tr>
+          <tr><td><b>Google News RSS</b><br><span class="corr-grp">공개 피드</span></td>
+              <td>중소기업 위기 관련 10개 검색어로 기사 수집 후 LDA 토픽모델링</td>
+              <td>762건<br>어휘 265개</td>
+              <td><code>crawl_topic.py</code></td></tr>
+          <tr><td><b>통계청 시도 경계</b><br><span class="corr-grp">공간정보</span></td>
+              <td>행정경계를 단순화해 SVG 경로로 변환 (7.5MB → 41KB)</td>
+              <td>17개 시도</td>
+              <td><code>build_map.py</code></td></tr>
+        </tbody>
+      </table>
+      <p class="src" style="margin-top:12px">
+        API 키는 저장소에 포함하지 않고 로컬 설정 파일에서 읽는다. 스크립트를 다시 실행하면
+        최신 통계로 갱신되며, 수집 시점과 통계표·항목 코드는 산출 JSON에 함께 기록된다.
+      </p>
+    </div>
+
+    <div class="insight" style="margin-top:16px;font-size:12.5px">
+      <strong>수집 과정에서 걸러낸 함정.</strong> ECOS 연체율표와 KOSIS 경기지수표는
+      <strong>2차원 구조</strong>라 항목을 하나만 지정하면 은행종류·지수종류가 한 계열에 섞여 들어온다.
+      처음 실행 시 102개월 구간에서 306건이 반환되어 발견했고, 이후 같은 실수를 막기 위해
+      <strong>같은 시점이 중복되면 수집을 중단</strong>하는 검사를 넣었다.
+    </div>
+  </div>
+
+  <!-- 분석 1 -->
+  <div class="section">
+    <div class="eyebrow-num">04 · Exploratory Analysis</div>
+    <h2>뉴스 담론은 부실 자체보다 정책 지원에 집중</h2>
+    <div class="subtitle">중소기업 위기 관련 기사 762건을 토픽모델링으로 주제 분류하였다. 주제별 비중은 현장에서 제기되는 관심사의 구성을 보여준다.</div>
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h3>토픽별 기사 수 (LDA, k=5)</h3>
+        <canvas id="chart-topic-docs"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>상위 키워드 빈도 (Top 12)</h3>
+        <canvas id="chart-keywords"></canvas>
+      </div>
+      <div class="chart-box full">
+        <h3>월별 토픽 구성 변화 (2026)</h3>
+        <canvas id="chart-topic-month"></canvas>
+              </div>
+      <div class="chart-box full">
+        <h3>토픽별 대표 키워드 및 기사</h3>
+        <table>
+          <thead>
+            <tr><th>토픽</th><th>기사 수</th><th style="text-align:left">대표 키워드 (LDA 상위 10)</th><th style="text-align:left">대표 기사</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag tag-t1">T1 대출 연체·폐업</span></td><td>156</td>
+              <td class="left">폐업, 연체율, 대출, 은행, 부담, 연체, 경영안정자금, 경영난, 중동, 소진공</td>
+              <td class="left">소상공인 매출·이익 동반 감소에 연체 부담까지… 중소기업 대출 부실 경고등</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-t2">T2 협력업체 대금·부도</span></td><td>161</td>
+              <td class="left">구조조정, 연체, 미지급, 부도, 협력업체, 대금, 파산, 대출, 증가, 은행권</td>
+              <td class="left">은행권 10년간 부실기업 구조조정 28조 투입…정상화 실패 56%</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-t3">T3 명절 자금난</span></td><td>132</td>
+              <td class="left">추석, 자금난, 자금, 억원, 운전자금, 창업, 대응, 유동성, 융자, 숨통</td>
+              <td class="left">KB국민은행, 추석 명절 맞이 중소기업 자금 지원으로 포용금융 실천</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-t4">T4 정책 긴급지원</span></td><td>199</td>
+              <td class="left">위기, 유동성, 경영난, 경영, 중진공, 재도약, 중기부, 폐업, 긴급, 극복</td>
+              <td class="left">소상공인 68% "빚 안고 폐업"…경영 위기 극복 위해 전문가 나선다</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-t5">T5 수출 부진·고금리</span></td><td>114</td>
+              <td class="left">수출, 부진, 최대, 역대, 기업은행, 대기업, 고금리, 금융지원, 분기, 이자</td>
+              <td class="left">작년 韓수출 대기업 부진에 최악 실적…10대기업 무역비중 37.9%→34.6%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="insight">
+          <strong>해석:</strong> T2(협력업체 대금·부도)와 T4(정책 긴급지원)에 <strong>중진공·중기부</strong>가 핵심 키워드로
+          등장한다는 점은, 위기 담론이 개별 기업 문제를 넘어 <strong>정책금융 기관의 대응 이슈</strong>로 전환되어 있음을 보여준다.
+          T1에서 '중동'이 키워드로 포착된 것은 지정학 리스크가 중소기업 자금 담론에 이미 반영되어 있음을 시사한다.
+        </div>
+      </div>
+    </div>
+  
+    <div class="readme"><span class="k">분석 결과</span><p><b>정책 지원 관련 기사의 비중이 가장 높다.</b> 5개 주제 중 "정책·구제 지원"이 199건으로 최다이며, "협력업체 대금·부도" 161건, "대출 연체·폐업" 156건 순이다.</p><p>언론 보도는 <b>대응 정책</b>에 집중되는 반면, 통계는 <b>이미 발생한 연체</b>를 사후 기록한다. 두 자료가 동일한 위기의 서로 다른 국면을 포착하고 있음을 의미한다.</p><span class="plain">※ 기사 수의 절대량보다 주제 구성의 변화를 해석 대상으로 삼는 것이 적절하다. 뉴스 검색은 최근 기사 비중이 높게 반환되기 때문이다.</span></div>
+  </div>
+
+  <!-- 분석 0: 지표 풀 상관 -->
+  <div class="section">
+    <div class="eyebrow-num">05 · Correlation Structure</div>
+    <h2>연체율에 약 6개월 선행하는 지표 확인</h2>
+    <div class="subtitle">24개 지표와 연체율의 상관 정도 및 선행 시차를 산출하였다.</div>
+    <div class="chart-grid">
+      <div class="chart-box full">
+        <h3>종합 위기지수 추이</h3>
+        <canvas id="chart-composite"></canvas>
+        <p class="src">전 지표를 전년동월대비 변화 → 위험방향 정렬 → z-score 평균. 0 이상이면 평균보다 위험한 국면</p>
+      </div>
+      <div class="chart-box full">
+        <h3><span id="corr-base">—</span>과의 상관 — 지표 <span id="corr-n">—</span>개</h3>
+        <div class="table-scroll" style="max-height:420px;overflow-y:auto">
+          <table class="corr-tbl">
+            <thead><tr>
+              <th style="text-align:left">지표</th><th>상관계수 r</th><th style="width:34%">크기</th>
+              <th>선행 시차</th><th>표본</th>
+            </tr></thead>
+            <tbody id="corr-body"></tbody>
+          </table>
+        </div>
+        <p class="src">
+          붉은 막대는 양(+)의 상관(지표가 오르면 연체율도 오름), 파란 막대는 음(−)의 상관.
+          선행 시차는 0~6개월을 모두 시도해 상관이 가장 컸던 값이다.
+          수준이 아닌 <strong>전년동월대비 변화</strong>로 계산하여 추세에 의한 허위상관을 제거하였다.
+        </p>
+      </div>
+    </div>
+  
+    <div class="readme"><span class="k">분석 결과</span><p><b>금융 부문 지표의 선행성이 가장 높다.</b> 연체율과의 상관은 가계대출 연체율(4개월 선행), 어음부도율(6개월 선행), 기준금리(6개월 선행) 순으로 나타난다.</p><p>지표군은 <b>선행 지표(6개월, 10개)</b>와 <b>동행 지표(0개월, 9개)</b>로 뚜렷이 구분된다. 선행 지표를 경보 신호로, 동행 지표를 확인 수단으로 활용하는 2단계 체계 구성이 가능하다.</p><span class="plain">※ 상관계수 r은 두 지표의 동조 정도를 −1~+1로 나타낸 값이다. 양(+)은 같은 방향, 음(−)은 반대 방향을 의미하며 0에 가까울수록 관련성이 낮다.</span></div>
+  </div>
+
+  <!-- 분석 2 -->
+  <div class="section">
+    <div class="eyebrow-num">06 · Credit Indicators</div>
+    <h2>금리 하락에도 연체율은 정체</h2>
+    <div class="subtitle">조달 비용은 하락하였으나 연체율은 개선되지 않았다. 금리 외 요인이 작용하고 있음을 시사한다.</div>
+    <div class="rng" style="max-width:none;margin:0 0 18px">
+      <span class="rng-label">조회 기간</span>
+      <span class="rng-val" id="fin-val">—</span>
+      <div class="rng-wrap">
+        <div class="rng-track"><div class="rng-fill" id="fin-fill"></div></div>
+        <input type="range" class="rng-slider" id="fin-min" step="1">
+        <input type="range" class="rng-slider" id="fin-max" step="1">
+      </div>
+      <button class="rng-reset" id="fin-reset" type="button">전체</button>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h3>은행 대출 연체율 — 기업 vs 가계 (2020~)</h3>
+        <canvas id="chart-delinq"></canvas>
+        <p class="src">한국은행 ECOS 901Y054 · 1일 이상 연체, 은행전체 기준</p>
+      </div>
+      <div class="chart-box">
+        <h3>대출금리 — 중소기업·대기업·기준금리</h3>
+        <canvas id="chart-closure"></canvas>
+        <p class="src">한국은행 ECOS 121Y015 · 예금은행 잔액 기준 / 722Y001</p>
+      </div>
+      <div class="chart-box full">
+        <h3>실물지표 — 설비투자·생산·중소기업 경기·어음부도율</h3>
+        <canvas id="chart-real"></canvas>
+        <p class="src">한국은행 ECOS 901Y066 · 901Y033 · 801Y002 / 통계청 KOSIS 303·DT_303005_CI001</p>
+      </div>
+      <div class="chart-box full">
+              </div>
+    </div>
+  
+    <div class="readme"><span class="k">분석 결과</span><p><b>조달 비용은 하락하였다.</b> 중소기업 대출금리는 2023년 11월 5.36%에서 2026년 7월 4.32%로 하락하였고 기준금리도 3.0% 수준이다. 그러나 <b>연체율은 0.8%에서 정체되어 있다.</b></p><p>중소기업 체감경기(BSI)는 <b>관측 전 기간 기준선 100을 하회</b>하였다(평균 67). BSI 100은 호전 응답과 악화 응답이 동수임을 의미하므로, 중소기업은 경기 국면과 무관하게 지속적으로 악화를 체감해 온 것으로 해석된다.</p><span class="plain">※ 따라서 BSI는 "70 이하 시 위험"과 같은 절대 기준이 아니라 전년 동월 대비 변동폭으로 판단하는 것이 타당하다.</span></div>
+  </div>
+
+  <!-- 분석 3 -->
+  <div class="section">
+    <div class="eyebrow-num">07 · Shock Timeline</div>
+    <h2>충격 사건 시점과 연체율 추이 대조</h2>
+    <div class="subtitle">홈플러스 회생 신청, 미국 상호관세, 중동 확전 등 일자가 확인된 사건을 연체율 시계열에 병렬 표시하였다.</div>
+    <div class="chart-grid">
+      <div class="chart-box full">
+        <h3>연체율·종합지수와 주요 충격 이벤트</h3>
+        <div class="rng">
+          <span class="rng-label">조회 기간</span>
+          <span class="rng-val" id="rng-val">—</span>
+          <div class="rng-wrap">
+            <div class="rng-track"><div class="rng-fill" id="rng-fill"></div></div>
+            <input type="range" class="rng-slider" id="rng-min" step="1">
+            <input type="range" class="rng-slider" id="rng-max" step="1">
+          </div>
+          <button class="rng-reset" id="rng-reset" type="button">전체</button>
+        </div>
+        <canvas id="chart-timeline"></canvas>
+        <p class="tl-hint">양 끝 핸들을 끌어 기간을 좁히면 차트와 아래 사건 목록이 함께 바뀝니다.</p>
+        <div class="evt-list" id="evt-list"></div>
+              </div>
+    </div>
+  
+    <div class="readme"><span class="k">분석 결과</span><p><b>사건 발생 시점에 연체율이 즉시 반응하지는 않는다.</b> 홈플러스 회생 신청(2025.3.4), 미국 관세 통보(2025.7.7), 중동 확전(2026.2.28) 모두 표시 시점 직후의 급등은 관측되지 않는다.</p><p>연체는 <b>일정 기간에 걸쳐 누적된다.</b> 거래처 대금 지연이 수개월의 시차를 두고 대출 상환 부담으로 전이되는 구조이므로, 사건과 지표를 연계해 해석할 경우 수개월 후 구간을 확인할 필요가 있다.</p><span class="plain">※ 본 시계열은 은행 기업대출 전체 기준으로, 특정 기업의 협력업체 피해가 직접 반영되지는 않는다. 사건 표시는 시점 대조를 위한 참조선이며 인과관계의 근거가 아니다.</span></div>
+  </div>
+
+  <!-- 지표 체계 -->
+  <!-- 지역별 산업·신용 지도 -->
+  <div class="section">
+    <div class="eyebrow-num">08 · Regional Analysis</div>
+    <h2>사업체 수와 신용위험은 비례하지 않음</h2>
+    <div class="subtitle">지역별 주력 산업 구성과 중소기업 연체율의 관계를 시도 단위로 분석하였다.</div>
+    <div class="chart-box full">
+      <div class="map-ctl">
+        <label for="map-ind">산업</label>
+        <select id="map-ind"></select>
+        <label for="map-metric" style="margin-left:6px">색상 기준</label>
+        <select id="map-metric">
+          <option value="risk">지역 종합 위기지수</option>
+          <option value="delinq">중소기업대출 연체율</option>
+          <option value="dishonor">어음부도율</option>
+          <option value="biz">사업체수</option>
+          <option value="emp">종사자수</option>
+          <option value="sales">매출액</option>
+        </select>
+        <span class="src" id="map-asof" style="margin-left:auto"></span>
+      </div>
+      <div class="map-wrap">
+        <div>
+          <svg id="kmap" class="cart" viewBox="0 0 460 600" role="img"
+               aria-label="시도별 지표 지도"></svg>
+          <div class="map-legend">
+            <div class="bar"></div>
+            <div class="ends"><span id="map-lo">—</span><span id="map-hi">—</span></div>
+          </div>
+        </div>
+        <div class="map-side" id="map-side"></div>
+      </div>
+
+      <div class="chart-grid" style="margin-top:20px">
+        <div class="chart-box">
+          <h3 id="ts-title">지역 시계열</h3>
+          <canvas id="chart-region-ts"></canvas>
+          <p class="src">지도에서 시도를 클릭하면 해당 지역 추이로 바뀝니다. 회색은 전국 평균</p>
+        </div>
+        <div class="chart-box">
+          <h3>산업 구성과 연체율</h3>
+          <canvas id="chart-region-scatter"></canvas>
+          <p class="src" id="scatter-note">가로축 = 선택 산업의 사업체 비중, 세로축 = 중소기업대출 연체율</p>
+        </div>
+      </div>
+      <p class="src" id="map-src"></p>
+    </div>
+  
+    <div class="readme"><span class="k">분석 결과</span><p><b>서비스업 비중이 높은 지역에서 연체율이 높게 나타난다.</b> 전문·과학기술 서비스업 비중과 연체율의 상관이 +0.64로 가장 높고 도매·소매업이 +0.43으로 뒤를 잇는다. 반면 <b>제조업(−0.36)과 건설업(−0.59)</b> 비중이 높은 지역은 낮게 나타난다.</p><p>사업체 수와는 관련성이 확인되지 않는다. 사업체 수 1위인 경기(160만)는 위험도 하위(−0.60), 2위인 서울(118만)은 상위(+0.99)에 위치한다.</p><span class="plain">※ 서비스업 비중이 높은 지역은 대부분 대도시에 해당하여, 산업 구성 효과와 도시 규모 효과를 본 자료만으로 분리할 수 없다. 광주(+2.59)는 어음부도율 단일 항목이 높게 산출된 사례로, 단월 값이 아닌 추세 확인이 필요하다.</span></div>
+  </div>
+
+
+  <!-- 내일채움공제 -->
+  <div class="section">
+    <div class="eyebrow-num">09 · Deferred Compensation</div>
+    <h2>공제 해지의 3분의 2는 기업이 아니라 사람이 떠나서 발생한다</h2>
+    <div class="subtitle">내일채움공제 중도해지 132,109건의 사유 구성을 확인하고, 각 사유에 대응하는 공개 지역지표로 시도별 해지 위험을 추정하였다.</div>
+
+    <div class="chart-grid">
+      <div class="chart-box">
+        <h3>중도해지 사유 상위 8 (전국 누적)</h3>
+        <canvas id="chart-nc-reason"></canvas>
+        <p class="src" id="nc-reason-src">—</p>
+      </div>
+      <div class="chart-box">
+        <h3>귀책계약자 구성</h3>
+        <canvas id="chart-nc-blame"></canvas>
+        <p class="src">기업 귀책은 폐업·권고사직·납입부담, 핵심인력 귀책은 이직·학업·창업 등을 포함한다.</p>
+      </div>
+    </div>
+
+    <div class="readme"><span class="k">분석 결과</span><p><b>해지 사유의 최대 항목은 '이직에 의한 퇴직'이다.</b> 전체 <span id="nc-total">—</span>건 중 <span id="nc-quit-share">—</span>를 차지한다. 귀책계약자 기준으로는 핵심인력이 <span id="nc-blame-emp">—</span>, 기업이 <span id="nc-blame-firm">—</span>이다.</p><p>이는 <b>공제 해지 위험이 기업 부실만의 문제가 아님</b>을 보여준다. 기업이 정상적으로 운영되더라도 근로자가 이직하면 해지로 이어진다. 따라서 해지 위험이 높은 지역을 찾으려면 기업 신용지표와 함께 <b>노동 이동성</b>을 보아야 한다.</p></div>
+
+    <div class="chart-box full" style="margin-top:20px">
+      <h3>시도별 해지 위험 추정</h3>
+      <p class="src" style="margin:0 0 10px">지역별 해지 통계는 공개되지 않는다. 위 사유 비중을 가중치로 삼아 대응하는 공개 지역지표를 결합한 <b>추정치</b>이며, 실제 해지율이 아니다.</p>
+      <canvas id="chart-nc-region" style="max-height:420px"></canvas>
+      <div id="nc-weights" class="nc-w"></div>
+    </div>
+
+    <div class="readme"><span class="k">분석 결과</span><p id="nc-finding">—</p><p><b>가중치는 임의로 정하지 않았다.</b> 전국 해지 실적에서 각 사유가 차지하는 건수 비중을 그대로 사용하였다. 대응하는 공개 지역지표가 있는 사유는 전체의 <span id="nc-cov">—</span>이며, 나머지(개인 경제적 부담·학업·기타)는 지수에 반영되지 않는다.</p><span class="plain">※ 이직률은 공제 가입자가 아니라 지역 전체 사업체를 센 값이다. 전국 사유 비중이 모든 지역에서 동일하다고 가정하였으며 이를 검증할 공개 자료는 없다. 순위는 점검 우선순위를 정하는 참고치이며 인과관계의 근거가 아니다. 세종은 시도별 연체율·어음부도율이 제공되지 않아 노동지표만으로 산출되었다.</span></div>
+
+    <div class="chart-box full" style="margin-top:20px">
+      <h3>공제사업 활용 방안</h3>
+      <div class="impl-grid">
+        <div class="impl">
+          <h4>해지 위험 상위 지역 선제 안내</h4>
+          <p>추정 상위 지역의 가입기업·가입자를 대상으로 만기 혜택과 중도해지 시 손실을 사전 안내한다. 이직이 최대 사유인 만큼 안내 대상은 기업뿐 아니라 <b>핵심인력 본인</b>이어야 한다.</p>
+        </div>
+        <div class="impl">
+          <h4>귀책 유형별 대응 분리</h4>
+          <p>기업 재무 악화가 두드러지는 지역은 정책자금·경영지원과 연계하고, 자발적 이직이 두드러지는 지역은 재직 유인 강화에 초점을 둔다. 같은 '위험'이라도 처방이 다르다.</p>
+        </div>
+        <div class="impl">
+          <h4>월 단위 모니터링</h4>
+          <p>사용 지표가 모두 월 단위 공개 API이므로 스크립트 재실행만으로 갱신된다. 분기·연 단위 내부 집계보다 빠르게 변화를 감지할 수 있다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 분석 결과 -->
+  <div class="section">
+    <div class="eyebrow-num">10 · SUMMARY</div>
+    <h2>종합</h2>
+    <div class="subtitle">각 분석 화면에서 도출된 결과를 네 항목으로 요약하였다.</div>
+
+    <div class="cardnews cn-2">
+      <div class="cn-card">
+        <span class="no">01</span>
+        <h4>신호는 금융 쪽에서 먼저 나온다</h4>
+        <p>어음부도율·기준금리가 연체율에 <b>약 6개월</b> 선행한다. 기업 체감지표나 생산 실적보다 금융 지표의 반응이 빠르다.</p>
+      </div>
+      <div class="cn-card">
+        <span class="no">02</span>
+        <h4>체감지표는 방향으로 읽어야 한다</h4>
+        <p>중소기업 BSI는 관측 전 기간 기준선을 하회하였다. 절대값 기준 경보 설정 시 <b>상시 발령 상태</b>가 된다.</p>
+      </div>
+      <div class="cn-card">
+        <span class="no">03</span>
+        <h4>전체는 안정, 연체는 미해결</h4>
+        <p>종합지수는 '안정' 구간이나 연체율은 저점의 <b>3배</b> 수준이다. 금리 하락에도 연체율은 동반 하락하지 않았다.</p>
+      </div>
+      <div class="cn-card accent">
+        <span class="no">04</span>
+        <h4>지역 위험은 산업이 가른다</h4>
+        <p>사업체 수가 아니라 <b>산업 구성</b>이 위험도를 좌우한다. 서비스업 비중이 높은 대도시의 취약성이 상대적으로 높다.</p>
+      </div>
+    </div>
+
+    <div class="chart-box full" style="margin-top:20px">
+      <h3>이 분석으로 할 수 있는 것과 없는 것</h3>
+      <div class="impl-grid">
+        <div class="impl">
+          <h5>할 수 있는 것</h5>
+          <p>6개월 선행 지표를 <b>경보 후보군</b>으로 선정하고, 지역·산업별 <b>점검 우선순위</b>를 설정하는 데 활용 가능하다.</p>
+        </div>
+        <div class="impl">
+          <h5>할 수 없는 것</h5>
+          <p><b>인과관계 규명은 불가하다.</b> 동조 관계까지만 확인하였으며, 경기 등 공통 요인이 두 지표를 동시에 움직였을 가능성을 배제하지 못하였다.</p>
+        </div>
+        <div class="impl">
+          <h5>다음 단계</h5>
+          <p>인과검정(Granger) 및 업종·규모별 세분화가 필요하다. 지역 분석은 단일 시점 기준이므로 <b>시계열 확장</b> 시 지역 고유 특성의 통제가 가능하다.</p>
+        </div>
+      </div>
+      <p class="src" style="margin-top:14px">
+        관측 기간(2018~2026)에는 코로나, 급격한 금리 변동, 통상 마찰, 중동 확전이 모두 들어 있다.
+        여기서 얻은 6개월 선행이 평시에도 유지되는지는 확인되지 않았다.
+        회사채 스프레드·신용등급 등의 지표는 공개 API가 제공되지 않아 포함하지 못하였다.
+      </p>
+    </div>
+  </div>
+
+<div class="footer">
+  중소기업 위기 조기경보 대시보드 &nbsp;|&nbsp; 손혜미<br>
+  Data: 한국은행 ECOS · 통계청 KOSIS · 공공데이터포털(중소벤처기업진흥공단) · Google News RSS<br>
+  사용 데이터는 전부 공개 API·공개 파일이며 내부·비공개 자료는 포함하지 않았다.
+</div>
+
+<script>
+const colors = {
+  blue: '#2E75B6', navy: '#1B3A5C', teal: '#4CA1AF', orange: '#FF8C42',
+  red: '#E74C3C', green: '#27AE60', purple: '#8E44AD', pink: '#E91E63',
+  yellow: '#F39C12', gray: '#95A5A6'
+};
+const topicLabels = ['T1 대출연체·폐업', 'T2 협력업체대금·부도', 'T3 명절 자금난', 'T4 정책 긴급지원', 'T5 수출부진·고금리'];
+const topicColors = [colors.blue, colors.red, colors.orange, colors.green, colors.purple];
+
+// 1) 토픽별 기사 수
+new Chart(document.getElementById('chart-topic-docs'), {
+  type: 'bar',
+  data: {
+    labels: topicLabels,
+    datasets: [{ label: '기사 수', data: [156, 161, 132, 199, 114], backgroundColor: topicColors, borderRadius: 4 }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, title: { display: true, text: '기사 수 (건)' } },
+              x: { ticks: { font: { size: 10 } } } } }
+});
+
+// 2) 상위 키워드
+new Chart(document.getElementById('chart-keywords'), {
+  type: 'bar',
+  data: {
+    labels: ['위기','폐업','유동성','추석','대출','수출','경영난','연체','구조조정','연체율','자금난','부도'],
+    datasets: [{ label: '빈도', data: [156,128,126,120,94,92,90,88,80,76,70,52],
+      backgroundColor: ['#2E75B6','#2E75B6','#2E75B6','#FF8C42','#90BDE0','#90BDE0','#90BDE0','#90BDE0','#90BDE0','#90BDE0','#90BDE0','#90BDE0'],
+      borderRadius: 4 }]
+  },
+  options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, title: { display: true, text: '출현 빈도' } },
+              y: { ticks: { autoSkip: false, font: { size: 10 } } } } }
+});
+
+// 3) 월별 토픽 구성
+const months26 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
+const topicMonthly = [
+  [0,1,2,9,4,15,18,28,25],
+  [4,3,3,3,3,7,10,18,9],
+  [2,2,1,8,0,1,4,13,73],
+  [1,5,8,11,9,10,32,25,32],
+  [0,6,0,3,6,5,11,8,5]
+];
+new Chart(document.getElementById('chart-topic-month'), {
+  type: 'bar',
+  data: {
+    labels: months26,
+    datasets: topicLabels.map((lab, i) => ({
+      label: lab, data: topicMonthly[i], backgroundColor: topicColors[i], borderRadius: 3
+    }))
+  },
+  options: { responsive: true,
+    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: '기사 수 (건)' } } },
+    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } } }
+});
+
+// 4) 연체율
+/* ── 아래 세 차트는 analysis/collect_ecos.py 가 한국은행 ECOS 오픈API에서
+      수집한 data/ecos.json 을 읽는다. 값을 코드에 적어두지 않으므로,
+      스크립트를 다시 돌리면 최신 통계로 갱신된다. ── */
+const fmtT = t => t.length === 6 ? `${t.slice(2,4)}.${t.slice(4,6)}` : t;
+const pick = (obs, from) => obs.filter(o => o.t >= from);
+
+fetch('data/ecos.json').then(r => r.json()).then(E => {
+  const S = E.series;
+  const A = E.analysis;   // 타임라인·상관·게이지가 모두 참조하므로 먼저 선언한다
+  document.querySelectorAll('[data-ecos-date]').forEach(el => {
+    el.textContent = E.collected_at.slice(0, 10);
+  });
+
+  // 4) 연체율 — 기업 vs 가계
+  const corp = pick(S.delinq_corp.obs, '202001');
+  const house = pick(S.delinq_house.obs, '202001');
+  const chDelinq = new Chart(document.getElementById('chart-delinq'), {
+    type: 'line',
+    data: {
+      labels: corp.map(o => fmtT(o.t)),
+      datasets: [
+        { label: S.delinq_corp.label, data: corp.map(o => o.v),
+          borderColor: colors.red, backgroundColor: colors.red + '18',
+          borderWidth: 2.4, pointRadius: 0, tension: .3, fill: true },
+        { label: S.delinq_house.label, data: house.map(o => o.v),
+          borderColor: colors.blue, borderWidth: 1.8, pointRadius: 0,
+          tension: .3, borderDash: [5, 4] }
+      ]
+    },
+    options: { responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: '연체율 (%)' } },
+                x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } } } }
+  });
+
+  // 5) 중소기업 대출금리 — 대기업·기준금리와 비교
+  const sme = pick(S.rate_sme.obs, '202001');
+  const lrg = pick(S.rate_large.obs, '202001');
+  const base = pick(S.base_rate.obs, '202001');
+  const chRate = new Chart(document.getElementById('chart-closure'), {
+    type: 'line',
+    data: {
+      labels: sme.map(o => fmtT(o.t)),
+      datasets: [
+        { label: '중소기업 대출금리', data: sme.map(o => o.v),
+          borderColor: colors.red, borderWidth: 2.4, pointRadius: 0, tension: .3 },
+        { label: '대기업 대출금리', data: lrg.map(o => o.v),
+          borderColor: colors.orange, borderWidth: 2, pointRadius: 0, tension: .3 },
+        { label: '한국은행 기준금리', data: base.map(o => o.v),
+          borderColor: '#94a3b8', borderWidth: 1.6, pointRadius: 0,
+          tension: .3, borderDash: [5, 4] }
+      ]
+    },
+    options: { responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: { y: { title: { display: true, text: '연 %' } },
+                x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } } } }
+  });
+
+  // 6) 실물지표 — 설비투자·전산업생산·어음부도율
+  const cap = pick(S.capex.obs, '202001');
+  const prod = pick(S.production.obs, '202001');
+  const dis = pick(S.dishonor.obs, '202001');
+  const chReal = new Chart(document.getElementById('chart-real'), {
+    type: 'line',
+    data: {
+      labels: cap.map(o => fmtT(o.t)),
+      datasets: [
+        { label: '설비투자지수', data: cap.map(o => o.v), yAxisID: 'y',
+          borderColor: colors.blue, borderWidth: 2, pointRadius: 0, tension: .3 },
+        { label: '전산업생산지수', data: prod.map(o => o.v), yAxisID: 'y',
+          borderColor: colors.green, borderWidth: 2, pointRadius: 0, tension: .3 },
+        { label: '중소기업 동행지수 순환변동치', data: pick(S.sme_cycle.obs, '202001').map(o => o.v),
+          yAxisID: 'y', borderColor: '#8E44AD', borderWidth: 2, pointRadius: 0, tension: .3 },
+        { label: '어음부도율(우축)', data: dis.map(o => o.v), yAxisID: 'y1',
+          borderColor: colors.red, borderWidth: 1.8, pointRadius: 0,
+          tension: .3, borderDash: [4, 3] }
+      ]
+    },
+    options: { responsive: true, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        y: { position: 'left', title: { display: true, text: '지수 (2020=100)' } },
+        y1: { position: 'right', title: { display: true, text: '부도율 (%)' },
+              grid: { drawOnChartArea: false } },
+        x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } } } }
+  });
+
+  /* ── 재무·신용 지표 기간 슬라이더 ────────────────
+     연체율·금리·실물지표 세 차트를 같은 기간으로 함께 움직인다.
+     세 차트의 x축 길이가 조금씩 달라(발표 시차) 가장 긴 것을 기준으로 잡고,
+     각 차트에는 자기 길이로 잘라 적용한다. */
+  (function () {
+    const base = pick(S.delinq_corp.obs, '202001').map(o => o.t);   // 78개월
+    const N = base.length - 1;
+    const fMin = document.getElementById('fin-min');
+    const fMax = document.getElementById('fin-max');
+    const fFill = document.getElementById('fin-fill');
+    const fVal = document.getElementById('fin-val');
+    if (!fMin) return;
+    [fMin, fMax].forEach(el => { el.min = 0; el.max = N; });
+    fMin.value = 0; fMax.value = N;
+
+    const CH = [chDelinq, chRate, chReal];
+
+    function apply() {
+      let a = parseInt(fMin.value, 10), b = parseInt(fMax.value, 10);
+      if (a > b) { [a, b] = [b, a]; }
+      if (b - a < 2) {
+        if (parseInt(fMin.value, 10) === a) b = Math.min(N, a + 2);
+        else a = Math.max(0, b - 2);
+      }
+      const pa = (a / N) * 100, pb = (b / N) * 100;
+      fFill.style.left = pa + '%';
+      fFill.style.width = (pb - pa) + '%';
+      fVal.textContent = fmtT(base[a]) + ' — ' + fmtT(base[b]) + '  (' + (b - a + 1) + '개월)';
+
+      CH.forEach(function (ch) {
+        if (!ch) return;
+        const n = ch.data.labels.length - 1;
+        ch.zoomScale('x', { min: Math.min(a, n), max: Math.min(b, n) }, 'none');
+      });
+    }
+
+    fMin.addEventListener('input', apply);
+    fMax.addEventListener('input', apply);
+    document.getElementById('fin-reset').addEventListener('click', function () {
+      fMin.value = 0; fMax.value = N; apply();
+    });
+    apply();
+  })();
+
+  // 6) 타임라인 — 연체율 + 종합 위기지수, 드래그로 구간 선택
+  const EVT = [
+    // 일자와 출처가 확인된 사실만 싣는다.
+    { t: '202503', d: '2025.03.04', cat: '기업부실', color: '#F39C12',
+      tx: '홈플러스 기업회생절차 신청 (서울회생법원 2025회합135)' },
+    { t: '202507', d: '2025.07.07', cat: '통상', color: '#8E44AD',
+      tx: '미국, 한국에 8.1부터 상호관세 25% 부과 통보' },
+    { t: '202508', d: '2025.08.07', cat: '통상', color: '#8E44AD',
+      tx: '한·미 협상 타결로 15%로 조정, 행정명령 서명·발효' },
+    { t: '202602', d: '2026.02.28', cat: '지정학', color: '#E74C3C',
+      tx: '중동 확전 이후 호르무즈 해협 봉쇄 — 두바이유 157.66달러, 원/달러 1,500원 돌파' },
+    { t: '202607', d: '2026.07.03', cat: '기업부실', color: '#F39C12',
+      tx: '홈플러스 회생절차 폐지 결정 — 공익채권 약 1.1조원, 협력업체 특례보증 3,000억원' }
+  ];
+  const CATC = { 기업부실: '#F39C12', 통상: '#8E44AD', 지정학: '#E74C3C', 통화정책: '#2E75B6' };
+
+  // 기준금리 변동은 수집 데이터에서 직접 뽑는다(별도 출처 불필요)
+  (function () {
+    const br = S.base_rate.obs;
+    for (let i = 1; i < br.length; i++) {
+      if (br[i].v !== br[i - 1].v && br[i].t >= '202401') {
+        EVT.push({ t: br[i].t, d: fmtT(br[i].t), cat: '통화정책', color: CATC.통화정책,
+          tx: '기준금리 ' + br[i - 1].v + '% → ' + br[i].v + '%' });
+      }
+    }
+    EVT.sort((a, b) => a.t.localeCompare(b.t));
+  })();
+
+  const tlAll = S.delinq_corp.obs;
+  const compMap = {};
+  A.composite.forEach(o => { compMap[o.t] = o.v; });
+
+  const tlChart = new Chart(document.getElementById('chart-timeline'), {
+    type: 'line',
+    data: {
+      labels: tlAll.map(o => fmtT(o.t)),
+      datasets: [
+        { label: '기업대출 연체율 (좌)', data: tlAll.map(o => o.v), yAxisID: 'y',
+          borderColor: '#1B3A5C', borderWidth: 2.6, pointRadius: 0, tension: .3,
+          backgroundColor: '#1B3A5C18', fill: true },
+        { label: '종합 위기지수 (우)', data: tlAll.map(o => compMap[o.t] ?? null), yAxisID: 'y1',
+          borderColor: '#E74C3C', borderWidth: 1.8, pointRadius: 0, tension: .3,
+          borderDash: [5, 4], spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { position: 'left', beginAtZero: true, title: { display: true, text: '연체율 (%)' } },
+        y1: { position: 'right', title: { display: true, text: 'z-score' }, grid: { drawOnChartArea: false } },
+        x: { ticks: { maxTicksLimit: 14, font: { size: 10 } } }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+        zoom: {
+          zoom: { drag: { enabled: true, backgroundColor: 'rgba(46,117,182,.14)',
+                          borderColor: '#2E75B6', borderWidth: 1 },
+                  mode: 'x', onZoomComplete: () => syncRange() },
+          limits: { x: { minRange: 3 } }
+        }
+      }
+    },
+    plugins: [{
+      afterDraw(chart) {
+        const { ctx, scales: { x: xA, y: yA } } = chart;
+        const lo = Math.ceil(xA.min), hi = Math.floor(xA.max);
+        EVT.forEach(e => {
+          const i = tlAll.findIndex(o => o.t === e.t);
+          if (i < lo || i > hi) return;                 // 보이는 구간만 그린다
+          const px = xA.getPixelForValue(i);
+          ctx.save();
+          ctx.strokeStyle = e.color; ctx.lineWidth = 1.3; ctx.setLineDash([4, 3]);
+          ctx.beginPath(); ctx.moveTo(px, yA.top); ctx.lineTo(px, yA.bottom); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = e.color;
+          ctx.beginPath(); ctx.arc(px, yA.top + 4, 3.2, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        });
+      }
+    }]
+  });
+
+  /* ── 기간 범위 슬라이더 ──────────────────────────
+     두 개의 range 입력을 겹쳐 놓고 낮은 쪽/높은 쪽 값을 각각 잡는다.
+     트랙은 배경 div 가 그리고, 입력 자체는 투명하게 두어 핸들만 보이게 한다. */
+  const rMin = document.getElementById('rng-min');
+  const rMax = document.getElementById('rng-max');
+  const rFill = document.getElementById('rng-fill');
+  const rVal = document.getElementById('rng-val');
+  const LAST = tlAll.length - 1;
+
+  [rMin, rMax].forEach(el => { el.min = 0; el.max = LAST; });
+  rMin.value = 0; rMax.value = LAST;
+
+  function applyRange() {
+    let a = parseInt(rMin.value, 10), b = parseInt(rMax.value, 10);
+    if (a > b) { [a, b] = [b, a]; }            // 핸들이 교차하면 값을 뒤집는다
+    if (b - a < 2) {                            // 최소 3개월은 남긴다
+      if (parseInt(rMin.value, 10) === a) b = Math.min(LAST, a + 2);
+      else a = Math.max(0, b - 2);
+    }
+    const pa = (a / LAST) * 100, pb = (b / LAST) * 100;
+    rFill.style.left = pa + '%';
+    rFill.style.width = (pb - pa) + '%';
+
+    const ta = tlAll[a].t, tb = tlAll[b].t;
+    rVal.textContent = fmtT(ta) + ' — ' + fmtT(tb) +
+      '  (' + (b - a + 1) + '개월)';
+
+    tlChart.zoomScale('x', { min: a, max: b }, 'none');
+
+    document.querySelectorAll('.evt-item').forEach(el => {
+      const t = el.dataset.t;
+      el.classList.toggle('dim', !(t >= ta && t <= tb));
+    });
+  }
+
+  rMin.addEventListener('input', applyRange);
+  rMax.addEventListener('input', applyRange);
+  document.getElementById('rng-reset').addEventListener('click', () => {
+    rMin.value = 0; rMax.value = LAST; applyRange();
+  });
+
+  // 이벤트 목록
+  document.getElementById('evt-list').innerHTML = EVT.map(e =>
+    '<div class="evt-item" data-t="' + e.t + '">' +
+      '<span class="dt">' + e.d + '</span>' +
+      '<span class="tag" style="background:' + e.color + '1a;color:' + e.color + '">' + e.cat + '</span>' +
+      '<span class="tx">' + e.tx + '</span>' +
+    '</div>').join('');
+
+  applyRange();
+
+
+  /* ── 종합 현황: 게이지 + KPI ─────────────────────── */
+  document.getElementById('n-ind').textContent = Object.keys(S).length;
+
+  // 게이지: -2 ~ +2 구간을 반원에 매핑하고 경보 구간을 색으로 나눈다
+  (function () {
+    const cur = A.current.value;
+    const BANDS = [
+      { to: 0.0, c: '#2E75B6', n: '안정' }, { to: 0.5, c: '#27AE60', n: '주의' },
+      { to: 1.0, c: '#F39C12', n: '경계' }, { to: 2.0, c: '#E74C3C', n: '위험' }
+    ];
+    const LO = -2, HI = 2;
+    const seg = [], col = [];
+    let prev = LO;
+    BANDS.forEach(b => { seg.push(b.to - prev); col.push(b.c); prev = b.to; });
+    new Chart(document.getElementById('gauge'), {
+      type: 'doughnut',
+      data: { datasets: [{ data: seg, backgroundColor: col, borderWidth: 0 }] },
+      options: { rotation: -90, circumference: 180, cutout: '72%',
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        responsive: true, maintainAspectRatio: false },
+      plugins: [{
+        afterDraw(ch) {
+          const { ctx, chartArea: a } = ch;
+          const cx = (a.left + a.right) / 2, cy = a.bottom;
+          const r = Math.min(cx - a.left, a.bottom - a.top) * 0.92;
+          const frac = Math.min(1, Math.max(0, (cur - LO) / (HI - LO)));
+          const ang = Math.PI + frac * Math.PI;
+          ctx.save();
+          ctx.strokeStyle = '#1a2332'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(ang) * r * 0.82, cy + Math.sin(ang) * r * 0.82);
+          ctx.stroke();
+          ctx.beginPath(); ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#1a2332'; ctx.fill();
+          ctx.restore();
+        }
+      }]
+    });
+    const LVC = { 안정: '#2E75B6', 주의: '#27AE60', 경계: '#F39C12', 위험: '#E74C3C' };
+    const gv = document.getElementById('gauge-val');
+    gv.textContent = (cur >= 0 ? '+' : '') + cur.toFixed(2);
+    gv.style.color = LVC[A.current.level];
+    const gl = document.getElementById('gauge-lv');
+    gl.textContent = A.current.level;
+    gl.style.color = LVC[A.current.level];
+    document.getElementById('gauge-sub').textContent =
+      fmtT(A.current.t) + ' 기준 · 종합 위기지수';
+  })();
+
+  // KPI 4종 — 최신값과 전년동월대비
+  (function () {
+    const PICK = ['delinq_corp', 'bsi_fund_now', 'dishonor', 'rate_sme'];
+    const box = document.getElementById('kpi-row');
+    box.innerHTML = PICK.map(function (k) {
+      const s0 = S[k]; if (!s0) return '';
+      const o = s0.obs[s0.obs.length - 1];
+      const py = s0.obs.find(function (x) {
+        return x.t === (parseInt(o.t.slice(0, 4)) - 1) + o.t.slice(4);
+      });
+      let d = '', cls = 'flat';
+      if (py) {
+        const diff = o.v - py.v;
+        cls = Math.abs(diff) < 1e-9 ? 'flat' : (diff * (s0.risk_dir || 1) > 0 ? 'up' : 'down');
+        d = (diff >= 0 ? '▲ ' : '▼ ') + Math.abs(diff).toFixed(2) + ' (전년동월비)';
+      }
+      return '<div class="kpi"><div class="k">' + s0.label + '</div>' +
+             '<div class="v">' + o.v + '<span class="u"> ' + s0.unit + '</span></div>' +
+             '<div class="d ' + cls + '">' + d + '</div></div>';
+    }).join('');
+  })();
+
+  /* ── 지표 풀 상관 매트릭스 ───────────────────────── */
+  (function () {
+    const host = document.getElementById('corr-body'); if (!host) return;
+    const rows = A.correlation.map(function (c) {
+      const w = Math.round(Math.abs(c.best_r) * 100);
+      const col = c.best_r > 0 ? '#E74C3C' : '#2E75B6';
+      return '<tr><td>' + c.label + '<div class="corr-grp">' + c.group + '</div></td>' +
+        '<td style="text-align:right;font-weight:600">' + (c.best_r > 0 ? '+' : '') + c.best_r.toFixed(3) + '</td>' +
+        '<td><span class="corr-bar" style="width:' + w + '%;background:' + col + '"></span></td>' +
+        '<td style="text-align:center">' + c.best_lag + '개월</td>' +
+        '<td style="text-align:center;color:#8a9ab0">' + c.n + '</td></tr>';
+    }).join('');
+    host.innerHTML = rows;
+    document.getElementById('corr-base').textContent = A.base_label;
+    document.getElementById('corr-n').textContent = A.correlation.length;
+  })();
+
+  /* ── 종합 위기지수 추이 ─────────────────────────── */
+  (function () {
+    const el = document.getElementById('chart-composite'); if (!el) return;
+    const c = A.composite;
+    new Chart(el, {
+      type: 'line',
+      data: { labels: c.map(function (o) { return fmtT(o.t); }),
+        datasets: [{ label: '종합 위기지수', data: c.map(function (o) { return o.v; }),
+          borderColor: '#1B3A5C', borderWidth: 2.4, pointRadius: 0, tension: .3,
+          segment: { borderColor: function (ctx) { return ctx.p1.parsed.y >= 0.5 ? '#E74C3C' : '#1B3A5C'; } },
+          fill: { target: { value: 0 }, above: '#E74C3C22', below: '#2E75B622' } }] },
+      options: { responsive: true, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false } },
+        scales: { y: { title: { display: true, text: 'z-score 평균' } },
+                  x: { ticks: { maxTicksLimit: 12, font: { size: 10 } } } } }
+    });
+  })();
+
+}).catch(e => {
+  console.error('ECOS 데이터 로드 실패', e);
+  document.querySelectorAll('[data-ecos-fallback]').forEach(el => {
+    el.textContent = '거시지표를 불러오지 못했습니다. analysis/collect_ecos.py 를 실행해 data/ecos.json 을 생성하세요.';
+  });
+});
+
+
+
+/* ── 지역별 산업·신용 지도 ──────────────────────────
+   통계청 시도 경계를 build_map.py 로 단순화해 SVG path 로 미리 투영했다.
+   (원본 7.5MB → 41KB) 클라이언트는 path 를 그리고 색만 칠하면 된다. */
+
+/* ── 내일채움공제 해지 위험 ──────────────────────────────────
+   nacham.json 은 build_nacham.py 가 만든다. 전국 사유 비중(실적)과
+   시도별 추정치(대리지표)를 함께 담고 있다. 화면에서도 둘을 구분해
+   표기한다 — 추정치를 실적처럼 보이게 하지 않는다.             */
+fetch('data/nacham.json').then(r => r.json()).then(N => {
+  var pct = function (n, d) { return (n / d * 100).toFixed(1) + '%'; };
+  var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+
+  var nat = N.national, tot = nat.total;
+
+  // 1) 사유 상위 8
+  var reasons = Object.entries(nat.by_reason).slice(0, 8);
+  var firmWords = ['기업', '폐업', '권고사직', '미납', '대기업'];
+  var isFirm = function (name) { return firmWords.some(function (w) { return name.indexOf(w) >= 0; }); };
+  new Chart(document.getElementById('chart-nc-reason'), {
+    type: 'bar',
+    data: {
+      labels: reasons.map(function (r) { return r[0].length > 18 ? r[0].slice(0, 17) + '…' : r[0]; }),
+      datasets: [{
+        label: '건수',
+        data: reasons.map(function (r) { return r[1]; }),
+        backgroundColor: reasons.map(function (r) { return isFirm(r[0]) ? colors.orange : colors.blue; }),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function (c) {
+          return reasons[c.dataIndex][0] + ' — ' + c.raw.toLocaleString() + '건 (' + pct(c.raw, tot) + ')';
+        } } }
+      },
+      scales: { x: { beginAtZero: true, title: { display: true, text: '건수' } },
+                y: { ticks: { font: { size: 11 } } } }
+    }
+  });
+  set('nc-reason-src', nat.citation + ' · 파랑 = 핵심인력 귀책, 주황 = 기업 귀책');
+
+  // 2) 귀책계약자 구성
+  var blame = Object.entries(nat.by_blame).sort(function (a, b) { return b[1] - a[1]; });
+  new Chart(document.getElementById('chart-nc-blame'), {
+    type: 'doughnut',
+    data: {
+      labels: blame.map(function (b) { return b[0]; }),
+      datasets: [{
+        data: blame.map(function (b) { return b[1]; }),
+        backgroundColor: [colors.blue, colors.orange, colors.gray], borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, cutout: '58%',
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 12 } },
+        tooltip: { callbacks: { label: function (c) {
+          return c.label + ' ' + c.raw.toLocaleString() + '건 (' + pct(c.raw, tot) + ')';
+        } } }
+      }
+    }
+  });
+
+  var quitN = nat.by_reason['이직에 의한 퇴직'] || 0;
+  set('nc-total', tot.toLocaleString());
+  set('nc-quit-share', quitN.toLocaleString() + '건, ' + pct(quitN, tot));
+  var bl = {}; blame.forEach(function (b) { bl[b[0]] = b[1]; });
+  set('nc-blame-emp', pct(bl['핵심인력'] || 0, tot));
+  set('nc-blame-firm', pct(bl['기업'] || 0, tot));
+  set('nc-cov', (N.coverage * 100).toFixed(1) + '%');
+
+  // 3) 시도별 추정
+  var rs = N.regions.filter(function (r) { return r.score !== null; });
+  var bandColor = function (b) {
+    return b === '높음' ? colors.red : b === '주의' ? colors.orange
+         : b === '보통' ? colors.blue : colors.gray;
+  };
+  new Chart(document.getElementById('chart-nc-region'), {
+    type: 'bar',
+    data: {
+      labels: rs.map(function (r) { return r.name; }),
+      datasets: [{
+        label: '해지 위험 추정(z)',
+        data: rs.map(function (r) { return r.score; }),
+        backgroundColor: rs.map(function (r) { return bandColor(r.band); }),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: function (c) {
+          var r = rs[c.dataIndex];
+          return [
+            r.band + ' (z = ' + r.score.toFixed(2) + ')',
+            '자발적 이직률 ' + (r.quit_rate != null ? r.quit_rate + '%' : '—'),
+            '비자발적 이직률 ' + (r.layoff_rate != null ? r.layoff_rate + '%' : '—'),
+            '중소기업 연체율 ' + (r.delinq != null ? r.delinq + '%' : '자료 없음')
+          ];
+        } } }
+      },
+      scales: {
+        x: { title: { display: true, text: '표준화 점수 (0 = 전국 평균 수준)' },
+             grid: { color: function (c) { return c.tick.value === 0 ? '#9AAAC4' : '#EEF1F4'; } } },
+        y: { ticks: { font: { size: 12 } } }
+      }
+    }
+  });
+
+  // 가중치 칩
+  var w = document.getElementById('nc-weights');
+  if (w) {
+    w.innerHTML = Object.keys(N.weights).map(function (k) {
+      var x = N.weights[k];
+      return '<span>' + x.label + ' <b>' + (x.w * 100).toFixed(1) + '%</b></span>';
+    }).join('') + '<span>최근 6개월 평균 기준</span>';
+  }
+
+  // 발견 문장
+  var top = rs.slice(0, 3), low = rs[rs.length - 1];
+  if (top.length) {
+    set('nc-finding', '');
+    var el = document.getElementById('nc-finding');
+    el.innerHTML = '<b>해지 위험이 높게 추정된 지역은 ' +
+      top.map(function (r) { return r.name + '(' + r.score.toFixed(2) + ')'; }).join(', ') +
+      '이다.</b> 공통점은 자발적 이직률이 전국 평균을 웃돈다는 점이며, 기업 신용지표만으로는 같은 순위가 나오지 않는다. ' +
+      '가장 낮게 추정된 지역은 ' + low.name + '(' + low.score.toFixed(2) + ')이다.';
+  }
+}).catch(function (e) { console.warn('nacham.json 로드 실패', e); });
+
+Promise.all([
+  fetch('data/region.json').then(r => r.json()),
+  fetch('data/kmap.json').then(r => r.json())
+]).then(([R, M]) => {
+  const svg = document.getElementById('kmap');
+  const selInd = document.getElementById('map-ind');
+  const selMet = document.getElementById('map-metric');
+  const side = document.getElementById('map-side');
+  if (!svg) return;
+
+  selInd.innerHTML = R.industries.map(i =>
+    '<option value="' + i.code + '">' + i.name + '</option>').join('');
+  // 전체 산업은 모든 시도가 100%라 산점도가 한 줄로 뭉친다. 비교가 되는 제조업을 기본으로 둔다.
+  if ([...selInd.options].some(o => o.value === 'C')) selInd.value = 'C';
+  // 인출선이 지도 밖으로 나가므로 좌우를 조금 넓혀 잘리지 않게 한다
+  const vb = M.viewBox.split(' ').map(Number);
+  svg.setAttribute('viewBox', (vb[0]-95) + ' ' + vb[1] + ' ' + (vb[2]+190) + ' ' + vb[3]);
+
+  const REG = {};
+  R.regions.forEach(r => { REG[r.name] = r; });
+  let picked = '서울';
+  let tsChart = null, scChart = null;
+
+  const fmt = n => n == null ? '—'
+    : (n >= 1e8 ? (n / 1e8).toFixed(1) + '억'
+    : n >= 1e4 ? (n / 1e4).toFixed(1) + '만' : Math.round(n).toLocaleString());
+  const isRate = m => m === 'delinq' || m === 'dishonor';
+  const isZ = m => m === 'risk';
+  const RISKC = { 위험:'#E74C3C', 경계:'#F39C12', 주의:'#27AE60', 안정:'#2E75B6' };
+
+  function valueOf(reg, ind, met) {
+    if (!reg) return null;
+    if (met === 'risk') return reg.risk ? reg.risk.value : null;
+    if (isRate(met)) {
+      const a = reg[met];
+      return a && a.length ? a[a.length - 1].v : null;
+    }
+    const o = reg.industry[ind];
+    return o ? o[met] : null;
+  }
+  function shareOf(reg, ind) {
+    const t = reg.industry['0'], c = reg.industry[ind];
+    return (t && c && t.biz && c.biz) ? c.biz / t.biz * 100 : null;
+  }
+
+  function colorFor(v, lo, hi) {
+    if (v == null || hi === lo) return '#eef2f6';
+    const t = (v - lo) / (hi - lo);
+    const S = [[232,241,248],[127,179,217],[46,117,182],[27,58,92]];
+    const seg = t < .34 ? [S[0],S[1],t/.34] : t < .67 ? [S[1],S[2],(t-.34)/.33] : [S[2],S[3],(t-.67)/.33];
+    const [a,b,k] = seg;
+    return 'rgb(' + a.map((c,i)=>Math.round(c+(b[i]-c)*k)).join(',') + ')';
+  }
+
+  function drawMap() {
+    const ind = selInd.value, met = selMet.value;
+    const vals = Object.keys(M.paths).map(n => valueOf(REG[n], ind, met)).filter(v => v != null);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+
+    /* 광역시 7곳은 면적이 도(道)의 1/10 이하라(광주 627 vs 강원 28,692)
+       폴리곤 위에 글자를 얹으면 서로 겹쳐 읽히지 않는다. 지도 밖 여백에
+       원형 마커와 인출선으로 빼고, 나머지는 영역 안에 그대로 둔다.
+       값은 라벨을 밀어낼 방향 벡터(좌우, 상하). */
+    const SMALL = { 서울:[-1,-1], 인천:[-1,1], 세종:[-1,0], 대전:[-1,1],
+                    광주:[-1,1], 대구:[1,0], 울산:[1,0], 부산:[1,1] };
+    const OFF = 62;
+
+    const shown = v => v == null ? '—'
+      : isZ(met) ? (v >= 0 ? '+' : '') + v.toFixed(2)
+      : isRate(met) ? v.toFixed(2) : fmt(v);
+
+    // 광역시는 면적이 도(道)의 1/10 이하라 주변 색에 묻힌다. 테두리를 굵게 줘
+    // 경계를 드러내고, 큰 도를 먼저 그린 뒤 위에 얹어 가려지지 않게 한다.
+    const order = Object.entries(M.paths).sort((a, b) =>
+      (SMALL[a[0]] ? 1 : 0) - (SMALL[b[0]] ? 1 : 0));
+
+    const paths = order.map(([name, d]) => {
+      const v = valueOf(REG[name], ind, met);
+      const fillC = isZ(met) && REG[name] && REG[name].risk
+        ? RISKC[REG[name].risk.level] : colorFor(v, lo, hi);
+      const sw = SMALL[name] ? 2.0 : 0.9;
+      const sc2 = SMALL[name] ? '#26384d' : '#fff';
+      return '<path d="' + d + '" data-n="' + name + '" class="kmap-p' +
+        (picked === name ? ' sel' : '') + '" fill="' + fillC +
+        '" stroke="' + sc2 + '" stroke-width="' + sw + '"><title>' + name + ' · ' + shown(v) +
+        (isZ(met) && REG[name] && REG[name].risk ? ' (' + REG[name].risk.level + ')' : '') +
+        '</title></path>';
+    }).join('');
+
+    const labels = Object.entries(M.labels || {}).map(([name, xy]) => {
+      const v = valueOf(REG[name], ind, met);
+      let dark;
+      if (isZ(met)) {
+        const lv = REG[name] && REG[name].risk ? REG[name].risk.level : null;
+        dark = lv === '위험' || lv === '안정';
+      } else {
+        dark = v != null && (v - lo) / ((hi - lo) || 1) > .55;
+      }
+      const fillC = isZ(met) && REG[name] && REG[name].risk
+        ? RISKC[REG[name].risk.level] : colorFor(v, lo, hi);
+
+      if (SMALL[name]) {
+        // 인출선 + 원형 마커 + 바깥 라벨
+        const [sx2, sy2] = SMALL[name];
+        const lx = xy[0] + sx2 * OFF;
+        const ly = xy[1] + sy2 * 16;
+        const anchor = sx2 < 0 ? 'end' : 'start';
+        const tx = lx + (sx2 < 0 ? -11 : 11);
+        return '<g class="kmap-lb" pointer-events="none">' +
+          '<line x1="' + xy[0] + '" y1="' + xy[1] + '" x2="' + lx + '" y2="' + ly + '" ' +
+          'stroke="#7b8b9d" stroke-width="0.9"></line>' +
+          '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="2.4" fill="#26384d"></circle>' +
+          '<circle cx="' + lx + '" cy="' + ly + '" r="7" fill="' + fillC +
+          '" stroke="#fff" stroke-width="1.6"></circle>' +
+          '<text x="' + tx + '" y="' + (ly - 1) + '" text-anchor="' + anchor + '" ' +
+          'font-size="11" font-weight="700" fill="#26384d">' + name + '</text>' +
+          '<text x="' + tx + '" y="' + (ly + 10) + '" text-anchor="' + anchor + '" ' +
+          'font-size="9.5" fill="#5b6e85">' + shown(v) + '</text></g>';
+      }
+
+      const col = dark ? '#fff' : '#26384d';
+      const sub = dark ? 'rgba(255,255,255,.82)' : '#5b6e85';
+      return '<g class="kmap-lb" pointer-events="none">' +
+        '<text x="' + xy[0] + '" y="' + (xy[1] - 1) + '" text-anchor="middle" ' +
+        'font-size="11.5" font-weight="700" fill="' + col + '">' + name + '</text>' +
+        '<text x="' + xy[0] + '" y="' + (xy[1] + 11) + '" text-anchor="middle" ' +
+        'font-size="10" fill="' + sub + '">' + shown(v) + '</text></g>';
+    }).join('');
+
+    svg.innerHTML = paths + labels;
+
+    svg.querySelectorAll('.kmap-p').forEach(el => {
+      el.addEventListener('click', () => { picked = el.dataset.n; drawMap(); drawSide(); drawTS(); drawScatter(); });
+    });
+
+    const u = isRate(met) ? '%' : '';
+    const bar = document.querySelector('.map-legend .bar');
+    if (isZ(met)) {
+      bar.style.background = 'linear-gradient(90deg,#2E75B6 0 25%,#27AE60 25% 50%,#F39C12 50% 75%,#E74C3C 75%)';
+      document.getElementById('map-lo').textContent = '안정 · 주의';
+      document.getElementById('map-hi').textContent = '경계 · 위험';
+    } else {
+      bar.style.background = 'linear-gradient(90deg,#e8f1f8,#7fb3d9,#2E75B6,#1B3A5C)';
+      document.getElementById('map-lo').textContent = (isRate(met) ? lo.toFixed(2) : fmt(lo)) + u;
+      document.getElementById('map-hi').textContent = (isRate(met) ? hi.toFixed(2) : fmt(hi)) + u;
+    }
+  }
+
+  function drawSide() {
+    const reg = REG[picked]; if (!reg) return;
+    const ind = selInd.value;
+    const tot = reg.industry['0'] || {}, cur = reg.industry[ind] || {};
+    const dl = reg.delinq.length ? reg.delinq[reg.delinq.length-1] : null;
+    const ds = reg.dishonor.length ? reg.dishonor[reg.dishonor.length-1] : null;
+    const sh = shareOf(reg, ind);
+    side.innerHTML =
+      '<h4>' + reg.name + '</h4>' +
+      '<div class="mrow"><span>사업체수 (전체)</span><b>' + fmt(tot.biz) + '</b></div>' +
+      '<div class="mrow"><span>종사자수 (전체)</span><b>' + fmt(tot.emp) + '</b></div>' +
+      '<div class="mrow"><span>' + selInd.options[selInd.selectedIndex].text + '</span><b>' + fmt(cur.biz) + '</b></div>' +
+      '<div class="mrow"><span>해당 산업 비중</span><b>' + (sh == null ? '—' : sh.toFixed(1) + '%') + '</b></div>' +
+      '<div class="mrow"><span>중소기업 연체율</span><b>' + (dl ? dl.v + '%' : '—') + '</b></div>' +
+      '<div class="mrow"><span>어음부도율</span><b>' + (ds ? ds.v + '%' : '—') + '</b></div>' +
+      '<div class="mrow"><span>지역 위기지수</span><b style="color:' +
+        (reg.risk ? RISKC[reg.risk.level] : '#8a9ab0') + '">' +
+        (reg.risk ? (reg.risk.value >= 0 ? '+' : '') + reg.risk.value.toFixed(2) +
+          ' ' + reg.risk.level : '—') + '</b></div>' +
+      '<p class="src" style="margin-top:9px">' + (dl ? fmtT(dl.t) + ' 기준' : '') + '</p>';
+  }
+
+  /* 선택 지역 시계열 — 전국 평균을 회색으로 함께 깔아 비교한다 */
+  function drawTS() {
+    const met = isRate(selMet.value) ? selMet.value : 'delinq';
+    const reg = REG[picked]; if (!reg || !reg[met].length) return;
+    const labels = reg[met].map(o => fmtT(o.t));
+    // 전국 평균: 같은 시점의 시도 값 평균
+    const byT = {};
+    R.regions.forEach(r => r[met].forEach(o => { (byT[o.t] = byT[o.t] || []).push(o.v); }));
+    const nat = reg[met].map(o => {
+      const a = byT[o.t]; return a ? +(a.reduce((x,y)=>x+y,0)/a.length).toFixed(2) : null;
+    });
+    document.getElementById('ts-title').textContent =
+      picked + ' — ' + (met === 'delinq' ? '중소기업대출 연체율' : '어음부도율');
+    const cfg = {
+      type: 'line',
+      data: { labels, datasets: [
+        { label: '전국 평균', data: nat, borderColor: '#b9c4d1', borderWidth: 1.6,
+          pointRadius: 0, tension: .3, borderDash: [4,3] },
+        { label: picked, data: reg[met].map(o => o.v), borderColor: '#1B3A5C',
+          borderWidth: 2.4, pointRadius: 0, tension: .3, backgroundColor: '#1B3A5C18', fill: true }
+      ] },
+      options: { responsive: true, interaction: { mode:'index', intersect:false },
+        plugins: { legend: { position:'top', labels:{ boxWidth:12, font:{size:11} } } },
+        scales: { y:{ beginAtZero:true, title:{ display:true, text:'%' } },
+                  x:{ ticks:{ maxTicksLimit:10, font:{size:10} } } } }
+    };
+    if (tsChart) { tsChart.destroy(); }
+    tsChart = new Chart(document.getElementById('chart-region-ts'), cfg);
+  }
+
+  /* 산업 비중 × 연체율 산점도 + 상관계수 */
+  function drawScatter() {
+    const ind = selInd.value;
+    const pts = R.regions.filter(r => r.delinq.length && shareOf(r, ind) != null)
+      .map(r => ({ x: +shareOf(r, ind).toFixed(2),
+                   y: r.delinq[r.delinq.length-1].v, n: r.name }));
+    if (pts.length < 3) return;
+    const mx = pts.reduce((s,p)=>s+p.x,0)/pts.length, my = pts.reduce((s,p)=>s+p.y,0)/pts.length;
+    const sx = Math.sqrt(pts.reduce((s,p)=>s+(p.x-mx)**2,0)), sy = Math.sqrt(pts.reduce((s,p)=>s+(p.y-my)**2,0));
+    const r = (sx>0&&sy>0) ? pts.reduce((s,p)=>s+(p.x-mx)*(p.y-my),0)/(sx*sy) : 0;
+
+    // 최소제곱 회귀직선 — 기울기와 절편으로 양 끝점만 그린다
+    const b = sx > 0 ? pts.reduce((s2,p)=>s2+(p.x-mx)*(p.y-my),0) / pts.reduce((s2,p)=>s2+(p.x-mx)**2,0) : 0;
+    const a0 = my - b * mx;
+    const xmin = Math.min(...pts.map(p=>p.x)), xmax = Math.max(...pts.map(p=>p.x));
+    const line = [{x: xmin, y: a0 + b*xmin}, {x: xmax, y: a0 + b*xmax}];
+
+    const cfg = {
+      type: 'scatter',
+      data: { datasets: [
+        { label: '추세선', data: line, type: 'line', borderColor: '#94a3b8',
+          borderWidth: 1.8, borderDash: [6,4], pointRadius: 0, fill: false, order: 2 },
+        { label: '시도', data: pts, order: 1,
+          backgroundColor: pts.map(p => p.n === picked ? '#E74C3C' : '#2E75B6'),
+          pointRadius: pts.map(p => p.n === picked ? 8 : 5.5) }
+      ] },
+      options: { responsive: true,
+        plugins: { legend: { display:false },
+          tooltip: { filter: c => c.datasetIndex === 1,
+            callbacks: { label: c => c.raw.n + ' — 비중 ' + c.raw.x + '%, 연체율 ' + c.raw.y + '%' } } },
+        scales: { x:{ title:{ display:true, text:'해당 산업 사업체 비중 (%)' } },
+                  y:{ title:{ display:true, text:'중소기업대출 연체율 (%)' } } } }
+    };
+    if (scChart) { scChart.destroy(); }
+    scChart = new Chart(document.getElementById('chart-region-scatter'), cfg);
+    const r2 = (r * r).toFixed(3);
+    document.getElementById('scatter-note').innerHTML =
+      '점 하나가 시도 하나(n=' + pts.length + '). ' +
+      selInd.options[selInd.selectedIndex].text + ' 비중 기준 <b>r = ' + r.toFixed(3) +
+      '</b>, R² = ' + r2 + ', 기울기 ' + b.toFixed(4) +
+      '. 붉은 점이 선택 지역. 단면 상관이므로 인과로 읽을 수 없다.';
+  }
+
+  function redraw() { drawMap(); drawSide(); drawTS(); drawScatter(); }
+  selInd.addEventListener('change', redraw);
+  selMet.addEventListener('change', redraw);
+  document.getElementById('map-asof').textContent = '사업체 ' + R.industry_year + '년 · 신용지표 최신월';
+  document.getElementById('map-src').textContent =
+    R.citation.industry + ' / ' + R.citation.delinq + ' / ' + R.citation.dishonor + ' / ' + M.source;
+  redraw();
+}).catch(e => console.error('지역 데이터 로드 실패', e));
+
+</script>
+
+</body>
+</html>
