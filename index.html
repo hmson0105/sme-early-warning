@@ -620,8 +620,8 @@ body.deck-mode {
         <button type="button" data-goto="충격 사건 대조"><b>충격 사건 대조</b><span>관세 · 분쟁 · 회생</span></button>
         <button type="button" data-goto="지역 분석"><b>지역 분석</b><span>시도 17개 · 업종 구성</span></button>
         <button type="button" data-goto="해지 사유 구성"><b>내일채움공제</b><span>해지 사유 · 지역 위험</span></button>
-        <button type="button" data-goto="연구 질문별 답변"><b>종합 정리</b><span>질문별 답변 · 활용 범위</span></button>
-        <button type="button" data-goto="데이터 수집"><b>분석 방법</b><span>수집 명세 · 재현 방법</span></button>
+        <button type="button" data-goto="주요 결과"><b>종합 정리</b><span>주요 결과 · 활용 범위</span></button>
+        <button type="button" data-goto="준비물"><b>따라 하기</b><span>준비물 · 실행 순서</span></button>
       </div>
     </div>
   </div>
@@ -666,24 +666,6 @@ body.deck-mode {
   </div>
 </section>
 
-<section class="slide" data-ch="1" data-t="연구 질문">
-  <div class="slide-in">
-    <div class="s-kicker">연구 질문</div>
-    <h2>검증 대상 3개 항목</h2>
-    <ul class="points">
-      <li><span class="tag">Q1</span><b>연체율 선행지표의 존재 여부</b>
-        <em>존재 시 선행 기간은 몇 개월인가<br>
-            검증 방법 — 지표별 0~6개월 시차를 적용한 상관 분석</em></li>
-      <li><span class="tag">Q2</span><b>지역 간 위험 격차의 원인</b>
-        <em>사업체 규모인가, 업종 구성인가<br>
-            검증 방법 — 시도별 업종 비중과 연체율의 관계 분석</em></li>
-      <li><span class="tag">Q3</span><b>내일채움공제 해지 위험 지역</b>
-        <em>위험이 높은 지역과 그 사유는 무엇인가<br>
-            검증 방법 — 전국 해지 사유 비중을 가중치로 한 지역지표 결합</em></li>
-    </ul>
-    <p class="lede">전 항목을 <b>공개 자료만으로</b> 검증. 내부·비공개 자료 미사용</p>
-  </div>
-</section>
 
 <section class="slide" data-ch="1" data-t="수집 자료">
   <div class="slide-in">
@@ -1139,28 +1121,6 @@ body.deck-mode {
 </section>
 
 <!-- ch8 정리 -->
-<section class="slide" data-ch="8" data-t="연구 질문별 답변">
-  <div class="slide-in">
-    <div class="s-kicker">정리</div>
-    <h2>연구 질문 3개에 대한 답</h2>
-    <ul class="points">
-      <li><span class="tag">Q1</span><b>연체율 선행지표는 존재하는가 — 존재함</b>
-        <em>지표 23종 중 <b>14종이 선행(시차 1개월 이상)</b>, 9종이 동행으로 판정<br>
-            가계대출 연체율 4개월(r=+0.720) · 어음부도율 6개월(r=+0.471) ·
-            한국은행 기준금리 6개월(r=+0.467)<br>
-            <b>다만 r=0.7을 넘는 것은 1종뿐</b>. 단일 지표 경보보다 복수 지표 병행 판단이 타당</em></li>
-      <li><span class="tag">Q2</span><b>지역 격차의 원인은 무엇인가 — 규모가 아니라 업종 구성</b>
-        <em>사업체 수 1위 경기(160만)는 위험 하위, 2위 서울(118만)은 상위<br>
-            전문·과학기술 서비스업 비중과 연체율 +0.64, 도매·소매업 +0.43<br>
-            제조업 −0.36, 건설업 −0.59로 방향이 반대<br>
-            <b>단, 서비스업 비중이 높은 지역은 대부분 대도시</b>. 업종 효과와 도시 규모 효과는 미분리</em></li>
-      <li><span class="tag">Q3</span><b>공제 해지 위험 지역과 사유는 — 대전·인천·광주, 사유는 이직</b>
-        <em>해지 132,109건 중 핵심인력 귀책 66.2%, 최다 사유는 '이직에 의한 퇴직' 34.5%<br>
-            지역 추정 상위 대전(+1.10) · 인천(+0.94) · 광주(+0.88)<br>
-            <b>지역별 해지 실적은 미공개</b>이므로 공개 지역지표로 추정한 값</em></li>
-    </ul>
-  </div>
-</section>
 
 <section class="slide" data-ch="8" data-t="주요 결과">
   <div class="slide-in">
@@ -1246,24 +1206,77 @@ body.deck-mode {
   </div>
 </section>
 
-<!-- ch9 방법 -->
-<section class="slide" data-ch="9" data-t="데이터 수집">
+<!-- ch9 따라 하기 -->
+<section class="slide" data-ch="9" data-t="준비물">
   <div class="slide-in">
-    <div class="s-kicker">방법</div>
-    <h2>데이터 수집 명세</h2>
+    <div class="s-kicker">따라 하기</div>
+    <h2>준비물 — 10분이면 끝납니다</h2>
+    <ul class="points">
+      <li><span class="tag">1</span><b>한국은행 ECOS 인증키</b> · 무료 · 즉시 발급
+        <em><code>ecos.bok.or.kr</code> 접속 → 상단 <b>오픈API</b> → <b>인증키 신청</b><br>
+            이메일과 사용 목적만 적으면 됩니다. 신청 즉시 화면에 키가 나옵니다</em></li>
+      <li><span class="tag">2</span><b>통계청 KOSIS 인증키</b> · 무료 · 즉시 발급
+        <em><code>kosis.kr</code> 접속 → 하단 <b>OpenAPI</b> → <b>활용신청</b><br>
+            회원가입 후 신청하면 바로 발급됩니다</em></li>
+      <li><span class="tag">3</span><b>AI 코딩 도구</b>
+        <em>대화하듯 코드를 만들어 주는 도구면 무엇이든 됩니다.
+            이 과제는 Claude Code를 사용했습니다</em></li>
+      <li><span class="tag">4</span><b>파이썬</b>
+        <em>맥에는 이미 깔려 있습니다. 터미널에 <code>python3 --version</code>을 쳐서
+            숫자가 나오면 준비 완료<br>
+            윈도우는 <code>python.org</code>에서 내려받아 설치하면 됩니다</em></li>
+    </ul>
+    <div class="readme"><span class="k">참고</span>
+      <p>공공데이터포털 파일은 <b>키 없이</b> 내려받습니다. 별도 신청이 필요 없습니다.<br>
+         뉴스 분석까지 하려면 <code>pip3 install scikit-learn</code> 한 줄만 추가로 실행합니다</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="키 보관하기">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기</div>
+    <h2>발급받은 키는 코드 밖에 둡니다</h2>
+    <p class="lede">키를 코드 안에 적으면 파일을 공유하는 순간 함께 노출됩니다.
+       따로 보관하고 코드가 읽어 가게 합니다</p>
+    <ul class="points">
+      <li><span class="tag">1</span><b>보관할 파일 만들기</b>
+        <em>내 컴퓨터의 <code>~/.config/hmson/keys.env</code> 위치에 파일을 만들고
+            아래 두 줄을 적습니다<br>
+            <code>ECOS_API_KEY=발급받은키</code><br>
+            <code>KOSIS_API_KEY=발급받은키</code></em></li>
+      <li><span class="tag">2</span><b>남이 못 읽게 막기</b>
+        <em>터미널에 <code>chmod 600 ~/.config/hmson/keys.env</code> 를 입력합니다.
+            본인만 읽을 수 있게 됩니다</em></li>
+      <li><span class="tag">3</span><b>깃허브에 안 올라가게 막기</b>
+        <em>프로젝트 폴더의 <code>.gitignore</code> 파일에 <code>keys.env</code> 한 줄을 추가합니다.
+            실수로 올리는 일을 막아 줍니다</em></li>
+    </ul>
+    <div class="readme"><span class="k">왜 이렇게 하나</span>
+      <p>공개 저장소는 한 번 올라간 내용이 기록에 남습니다.
+         <b>지워도 과거 기록에서 볼 수 있습니다.</b> 처음부터 올리지 않는 것이 유일한 방법입니다</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="무엇을 받아오나">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기</div>
+    <h2>어디서 무엇을 받아오는지</h2>
+    <p class="lede">아래 표의 코드를 그대로 쓰면 같은 자료를 받을 수 있습니다</p>
     <div class="chart-box full">
       <div class="tbl-wrap"><table><thead><tr>
-        <th>출처</th><th>표·경로</th><th style="text-align:center">단위</th>
+        <th>출처</th><th>표 코드</th><th style="text-align:center">단위</th>
         <th style="text-align:center">주기</th><th style="text-align:center">규모</th>
       </tr></thead><tbody>
         <tr><td>한국은행 ECOS</td><td class="left">901Y054 연체율 · 121Y015 대출금리 · 722Y001 기준금리 ·
           801Y002 어음부도율 · 512Y013·014 BSI · 513Y001 경제심리 · 511Y002 소비자동향 ·
           901Y033 생산 · 901Y066 설비투자 · 901Y025·026 제조업 · 901Y118 수출입</td>
           <td style="text-align:center">전국</td><td style="text-align:center">월</td>
-          <td style="text-align:center">22계열</td></tr>
+          <td style="text-align:center">22종</td></tr>
         <tr><td>통계청 KOSIS</td><td class="left">303/DT_303005_CI001 중소기업 경기동행지수</td>
           <td style="text-align:center">전국</td><td style="text-align:center">월</td>
-          <td style="text-align:center">2계열</td></tr>
+          <td style="text-align:center">2종</td></tr>
         <tr><td>통계청 KOSIS</td><td class="left">101/DT_1K52F08 시도·산업별 사업체수·종사자수·매출액</td>
           <td style="text-align:center">시도×산업</td><td style="text-align:center">연(2024)</td>
           <td style="text-align:center">17×8</td></tr>
@@ -1284,135 +1297,125 @@ body.deck-mode {
           <td style="text-align:center">17개</td></tr>
       </tbody></table></div>
     </div>
-    <div class="readme"><span class="k">수집 결과</span>
-      <p>전국 지표 <b>24계열 · 관측치 2,494건</b>(2018.01~2026.09).
-         API 키는 저장소 외부(<code>~/.config/</code>)에 보관하여 코드와 분리</p>
+    <div class="readme"><span class="k">합계</span>
+      <p>전국 지표 <b>24종 · 관측치 2,494건</b>(2018.01~2026.09). 전부 무료 공개 자료</p>
     </div>
   </div>
 </section>
 
-<section class="slide" data-ch="9" data-t="전처리">
+<section class="slide" data-ch="9" data-t="실행 순서">
   <div class="slide-in">
-    <div class="s-kicker">방법</div>
-    <h2>전처리에서 실제로 막힌 지점</h2>
-    <ul class="points">
-      <li><span class="tag">1</span><b>동일 월 중복 반환</b>
-        <em>ECOS 2차원 통계표에서 항목을 하나만 지정하면 은행 종류별로 분리되어 반환됨.
-            102개월을 요청했는데 306행 수신<br>
-            → 항목코드 2개를 모두 지정하고, <b>같은 시점이 두 번 나오면 중단하는 검사</b>를 추가</em></li>
-      <li><span class="tag">2</span><b>요청 셀 수 제한</b>
-        <em>KOSIS는 1회 요청당 4만 셀 제한. <code>DT_1K52F01</code>이 거부됨<br>
-            → 사업체구분 차원이 없는 <code>DT_1K52F08</code>로 대체</em></li>
-      <li><span class="tag">3</span><b>중소기업 전용 연체율 부재</b>
-        <em>전국 단위 표에는 기업대출 전체만 존재<br>
-            → 중소기업 전용은 <b>지역별 표(141Y005)에만</b> 있어 지도 분석에서만 사용.
-            전국 분석은 기업대출 전체 기준임을 화면에 명시</em></li>
-      <li><span class="tag">4</span><b>합산 지역 혼입</b>
-        <em>이직 통계에 '전남광주통합특별시'라는 합산 항목이 포함되어 광주·전남이 이중 계상<br>
-            → 합산 코드를 제외 목록에 등록</em></li>
-      <li><span class="tag">5</span><b>단월 급등에 의한 순위 역전</b>
-        <em>광주 어음부도율이 2026.07 0.12% → 08 2.59%로 단월 급등하여 위험 1위로 산출<br>
-            → 지역지표 전부를 <b>최근 6개월 평균</b>으로 통일. 광주는 3위로 조정됨</em></li>
-    </ul>
-  </div>
-</section>
-
-<section class="slide" data-ch="9" data-t="분석 절차">
-  <div class="slide-in">
-    <div class="s-kicker">방법</div>
-    <h2>분석 절차</h2>
-    <ul class="points">
-      <li><span class="tag">1</span><b>전년 동월 대비 변환</b>
-        <em>원계열끼리 상관을 재면 두 지표가 모두 시간에 따라 증가한다는 이유만으로
-            관계가 과대 추정됨(허위상관). 전년 동월 대비 변화로 전환하여 공통 추세를 제거<br>
-            계절성도 함께 상쇄되는 효과가 있음</em></li>
-      <li><span class="tag">2</span><b>시차 상관 — 0~6개월</b>
-        <em>지표를 1개월씩 당기며 기업대출 연체율과 피어슨 상관을 계산.
-            절대값이 최대인 시차를 선행 기간으로 판정<br>
-            관측 수는 시차에 따라 90→84건으로 감소하므로 표의 관측수 열을 함께 확인</em></li>
-      <li><span class="tag">3</span><b>표준화 후 종합</b>
-        <em>%·지수·금액 등 단위가 달라 직접 합산 불가.
-            각 지표를 평균 대비 이격 정도로 환산하고, <b>값이 클수록 위험하도록 부호를 정렬</b>한 뒤 평균<br>
-            단계 구분 — 안정 0 미만 · 주의 0~0.5 · 경계 0.5~1.0 · 위험 1.0 이상</em></li>
-      <li><span class="tag">4</span><b>토픽모델링과 토픽지수</b>
-        <em>LDA로 기사 781건을 5개 주제로 분류(어휘 251개).
-            토픽지수 = 월별 토픽 할당 단어 수 ÷ 월별 전체 기사 수<br>
-            고광이·오승원·백장선(2020), 한국데이터정보과학회지 31(4) 579–594</em></li>
-      <li><span class="tag">5</span><b>해지 위험 가중합</b>
-        <em>전국 해지 사유 비중을 가중치로 사용 — 자발적 이직 55.6% · 권고사직 22.3% ·
-            기업 재무 22.1%<br>
-            설명 가능한 사유는 전체의 65.9%이며 나머지는 대응 지표 부재로 미반영</em></li>
-    </ul>
-  </div>
-</section>
-
-<section class="slide" data-ch="9" data-t="재현 방법">
-  <div class="slide-in">
-    <div class="s-kicker">방법</div>
-    <h2>그대로 따라 하는 법</h2>
-    <ul class="points compact">
-      <li><b>준비물</b>
-        <em>한국은행 ECOS·통계청 KOSIS 인증키(무료 발급) · AI 코딩 도구 ·
-            파이썬. 별도 설치 프로그램 없음. 뉴스 토픽모델링에만 scikit-learn 필요<br>
-            공공데이터포털 파일은 키 없이 내려받으므로 발급 불필요</em></li>
-      <li><b>실행 순서</b>
-        <em>순서가 있음. 뒤 스크립트가 앞 산출물을 읽음</em></li>
-    </ul>
+    <div class="s-kicker">따라 하기</div>
+    <h2>순서대로 7번 실행하면 됩니다</h2>
+    <p class="lede"><b>순서가 중요합니다.</b> 뒤 단계가 앞 단계의 결과 파일을 읽습니다.
+       터미널에서 한 줄씩 차례로 입력하세요</p>
     <div class="chart-box full">
       <div class="tbl-wrap"><table><thead><tr>
-        <th style="text-align:center">순서</th><th>스크립트</th><th>하는 일</th><th>산출</th>
+        <th style="text-align:center">순서</th><th>입력할 명령</th><th>하는 일</th><th>만들어지는 파일</th>
       </tr></thead><tbody>
-        <tr><td style="text-align:center">1</td><td class="left"><code>collect_ecos.py</code></td>
-          <td class="left">ECOS 22종 + KOSIS 2종 수집, 중복 시점 검사</td><td class="left">ecos_result.json</td></tr>
-        <tr><td style="text-align:center">2</td><td class="left"><code>build_index.py</code></td>
-          <td class="left">전년 동월 대비 변환 · 시차 상관 · 종합지수</td><td class="left">data/ecos.json</td></tr>
-        <tr><td style="text-align:center">3</td><td class="left"><code>collect_region.py</code></td>
-          <td class="left">시도별 산업 구성 · 연체율 · 어음부도율</td><td class="left">data/region.json</td></tr>
-        <tr><td style="text-align:center">4</td><td class="left"><code>collect_jobmove.py</code></td>
+        <tr><td style="text-align:center">1</td><td class="left"><code>python3 analysis/collect_ecos.py</code></td>
+          <td class="left">한국은행·통계청에서 지표 24종 받아오기</td><td class="left">ecos_result.json</td></tr>
+        <tr><td style="text-align:center">2</td><td class="left"><code>python3 analysis/build_index.py</code></td>
+          <td class="left">시차 상관 계산, 종합 경보지수 산출</td><td class="left">data/ecos.json</td></tr>
+        <tr><td style="text-align:center">3</td><td class="left"><code>python3 analysis/collect_region.py</code></td>
+          <td class="left">시도별 산업 구성·연체율·어음부도율</td><td class="left">data/region.json</td></tr>
+        <tr><td style="text-align:center">4</td><td class="left"><code>python3 analysis/collect_jobmove.py</code></td>
           <td class="left">시도별 자발적·비자발적 이직</td><td class="left">data/jobmove.json</td></tr>
-        <tr><td style="text-align:center">5</td><td class="left"><code>build_map.py</code></td>
-          <td class="left">시도 경계 단순화 (7.5MB → 42KB)</td><td class="left">data/kmap.json</td></tr>
-        <tr><td style="text-align:center">6</td><td class="left"><code>build_nacham.py</code></td>
-          <td class="left">해지 사유 비중 · 지역 위험 추정 · 해지 타이밍</td><td class="left">data/nacham.json</td></tr>
-        <tr><td style="text-align:center">7</td><td class="left"><code>crawl_topic.py</code></td>
-          <td class="left">뉴스 크롤링 · LDA · 토픽지수</td><td class="left">data/topic.json</td></tr>
+        <tr><td style="text-align:center">5</td><td class="left"><code>python3 analysis/build_map.py</code></td>
+          <td class="left">지도 경계 줄이기 (7.5MB → 42KB)</td><td class="left">data/kmap.json</td></tr>
+        <tr><td style="text-align:center">6</td><td class="left"><code>python3 analysis/build_nacham.py</code></td>
+          <td class="left">공제 해지 사유·지역 위험·해지 시기</td><td class="left">data/nacham.json</td></tr>
+        <tr><td style="text-align:center">7</td><td class="left"><code>python3 analysis/crawl_topic.py</code></td>
+          <td class="left">뉴스 수집·주제 분류·토픽지수</td><td class="left">data/topic.json</td></tr>
       </tbody></table></div>
     </div>
-    <div class="readme"><span class="k">확인</span>
-      <p><code>python3 -m http.server</code> 로 띄워 확인. 빌드·컴파일 과정 없음.
-         깃허브에 올리면 그대로 서비스됨</p>
+    <div class="readme"><span class="k">화면 띄우기</span>
+      <p>프로젝트 폴더에서 <code>python3 -m http.server</code> 를 입력하고
+         브라우저에서 <code>localhost:8000</code> 으로 들어갑니다<br>
+         <b>빌드나 설치 과정이 없습니다.</b> 깃허브에 올리면 그대로 웹사이트가 됩니다</p>
     </div>
   </div>
 </section>
 
-<section class="slide" data-ch="9" data-t="구축 과정">
+<section class="slide" data-ch="9" data-t="계산 방법">
   <div class="slide-in">
-    <div class="s-kicker">방법</div>
-    <h2>AI 코딩 도구 활용 구축</h2>
-    <p class="lede">개발 인력·외부 용역 없이 실무자가 직접 구축. 수집·분석 코드 전량 공개</p>
+    <div class="s-kicker">따라 하기</div>
+    <h2>숫자를 어떻게 만들었는지</h2>
     <ul class="points">
-      <li><span class="tag">01</span><b>방향 전환 — 막힌 것을 빨리 확인</b>
-        <em>당초 특허 데이터 API 수집을 시도했으나 KIPRIS·위즈도메인·윕스온 모두
-            개인이 사용 가능한 API 미제공으로 확인<br>
-            <b>AI가 대안을 만들어내지 않고 '없다'고 보고</b>하여 조기에 공개 API가 확실한
-            주제로 전환</em></li>
-      <li><span class="tag">02</span><b>검증 요구 — 실제 수집 여부 확인</b>
-        <em>"공개 데이터를 수집해서 만든 것이 맞는가"를 확인한 결과,
-            뉴스는 실제 크롤링했으나 <b>거시지표는 코드에 값이 기입된 상태</b>였음<br>
-            기입값과 실제값이 상이(2023.12 연체율 0.48 vs 0.60).
-            전량 API 수집으로 교체</em></li>
-      <li><span class="tag">03</span><b>사실 확인 지시</b>
-        <em>충격 사건은 <b>근거가 확인된 것만</b> 기재하도록 지시하여
-            일자가 확인된 3건만 표시<br>
-            지표 체계표의 '연동 예정' 표기가 실제 완료 상태와 불일치하여 정정</em></li>
-      <li><span class="tag">04</span><b>화면 검증 — 사람이 봐야만 보이는 오류</b>
-        <em>지도에서 경기도 라벨이 서울 위치에 표시되고 광주가 보이지 않는 문제 발견.
-            코드는 정상 작동하고 오류도 없었음<br>
-            무게중심 대신 <b>자기 영역 내부이면서 타 지역 외부</b>인 지점을 탐색하도록 수정</em></li>
+      <li><span class="tag">1</span><b>1년 전과 비교합니다</b>
+        <em>원래 숫자끼리 비교하면 둘 다 세월에 따라 커진다는 이유만으로
+            "관계가 깊다"는 착시가 생깁니다<br>
+            그래서 <b>전년 같은 달 대비 얼마나 변했는지</b>로 바꿔서 비교합니다.
+            계절 영향도 함께 사라집니다</em></li>
+      <li><span class="tag">2</span><b>한 달씩 당겨 보며 가장 잘 맞는 지점을 찾습니다</b>
+        <em>지표를 1개월씩 앞당기며 연체율과 비교합니다.
+            0개월부터 6개월까지 모두 해 보고 <b>가장 잘 맞는 시차</b>를 그 지표의 선행 기간으로 봅니다</em></li>
+      <li><span class="tag">3</span><b>단위가 다른 지표를 같은 자로 맞춥니다</b>
+        <em>%와 지수는 그냥 더할 수 없습니다. 각 지표를 <b>평균에서 얼마나 떨어져 있는지</b>로
+            바꾸고, 값이 클수록 위험하도록 방향을 맞춘 뒤 평균을 냅니다<br>
+            이 값이 종합 경보지수입니다 (안정 0 미만 · 주의 0~0.5 · 경계 0.5~1.0 · 위험 1.0 이상)</em></li>
+      <li><span class="tag">4</span><b>뉴스는 기사 수 대신 '기사당 관심도'로 봅니다</b>
+        <em>기사 수만 세면 많이 수집한 달이 위기가 심한 달처럼 보입니다<br>
+            토픽지수 = <b>그 달 해당 주제 단어 수 ÷ 그 달 전체 기사 수</b>로 나눠
+            수집량 영향을 없앱니다</em></li>
+      <li><span class="tag">5</span><b>해지 위험은 실제 사유 비중을 가중치로 씁니다</b>
+        <em>가중치를 임의로 정하지 않고 전국 해지 실적에서 가져옵니다 —
+            자발적 이직 55.6% · 권고사직 22.3% · 기업 재무 22.1%</em></li>
     </ul>
-    <div class="readme"><span class="k">정리</span>
-      <p>AI는 빠르게 결과물을 만들지만, <b>그것이 사실인지와 사용 가능한 자료인지는
-         사람이 확인</b>해야 했음. 본 과제에서 실무자 역할의 상당 부분이 그 확인에 있었음</p>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="막힐 때">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기</div>
+    <h2>이런 오류가 나면</h2>
+    <p class="lede">실제로 만나게 되는 다섯 가지입니다. 해결 방법이 코드에 이미 들어 있습니다</p>
+    <ul class="points compact">
+      <li><b>같은 달이 여러 번 나올 때</b>
+        <em><b>증상</b> — 102개월을 요청했는데 306줄이 돌아옴<br>
+            <b>원인</b> — 한국은행 표가 2차원이라 은행 종류별로 쪼개져 나옴<br>
+            <b>해결</b> — 항목코드를 2개 모두 지정. 같은 달이 두 번 나오면 멈추는 검사도 함께 넣기</em></li>
+      <li><b>통계청이 요청을 거부할 때</b>
+        <em><b>증상</b> — 요청이 반려되고 자료가 비어서 옴<br>
+            <b>원인</b> — 한 번에 받을 수 있는 칸이 4만 개로 제한됨<br>
+            <b>해결</b> — 항목이 적은 표로 바꾸거나 기간을 나눠서 요청</em></li>
+      <li><b>찾는 지표가 전국 표에 없을 때</b>
+        <em><b>증상</b> — 중소기업 전용 연체율이 전국 통계에 없음<br>
+            <b>해결</b> — 지역별 표(141Y005)에는 있음. 어느 기준인지 화면에 꼭 밝혀 적기</em></li>
+      <li><b>지역 수가 안 맞을 때</b>
+        <em><b>증상</b> — 17개 시도인데 18개가 나옴<br>
+            <b>원인</b> — '전남광주통합특별시' 같은 <b>합산 항목</b>이 섞여 광주·전남이 두 번 계산됨<br>
+            <b>해결</b> — 합산 코드를 빼는 목록에 넣기</em></li>
+      <li><b>순위가 매달 뒤바뀔 때</b>
+        <em><b>증상</b> — 광주 어음부도율이 한 달 만에 0.12% → 2.59%로 뛰며 1위가 됨<br>
+            <b>해결</b> — 지역 지표는 <b>최근 6개월 평균</b>으로 통일. 한 달 값에 휘둘리지 않게 됨</em></li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="바로 응용하기">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기</div>
+    <h2>다른 업무에도 그대로 씁니다</h2>
+    <p class="lede">바꿀 것은 <b>표 코드와 검색어뿐</b>입니다. 계산하고 화면 그리는 부분은 그대로 둡니다</p>
+    <ul class="points">
+      <li><span class="tag">01</span><b>다른 지표로 바꾸기</b>
+        <em><code>collect_ecos.py</code> 맨 위의 목록에서 표 코드만 교체<br>
+            관심 있는 지표를 ECOS·KOSIS에서 찾아 코드를 적어 넣으면 끝</em></li>
+      <li><span class="tag">02</span><b>다른 기준지표와 비교하기</b>
+        <em><code>build_index.py</code>의 기준을 연체율이 아닌 다른 지표로 바꾸면,
+            그 지표에 선행하는 신호를 찾아 줍니다</em></li>
+      <li><span class="tag">03</span><b>다른 주제의 뉴스 보기</b>
+        <em><code>crawl_topic.py</code>의 검색어 10개만 바꾸면
+            그 주제의 담론 구성과 토픽지수가 나옵니다</em></li>
+      <li><span class="tag">04</span><b>자료만 갱신하기</b>
+        <em>매달 스크립트를 다시 돌리면 화면이 최신으로 바뀝니다.
+            <b>화면 코드는 손대지 않아도 됩니다</b> — 숫자를 코드에 적어 두지 않고
+            파일에서 읽어 오기 때문입니다</em></li>
+    </ul>
+    <div class="readme"><span class="k">소요 시간</span>
+      <p>키 발급 10분 · 코드 내려받기 1분 · 전체 실행 수 분.
+         <b>처음 시작해서 화면이 뜰 때까지 30분 안쪽</b>입니다</p>
     </div>
   </div>
 </section>
@@ -2407,7 +2410,7 @@ fetch('data/nacham.json').then(r => r.json()).then(function (N) {
    display:none 으로 감추면 폭이 0 이 되어 Chart.js 가 크기를
    잘못 잡는다. 주소의 #숫자 가 현재 화면을 가리킨다. */
 (function () {
-  var CH = ["개요","추진 배경","현재 상태","뉴스 분석","선행 신호","충격 사건","지역 분석","내일채움공제","정리","방법"];
+  var CH = ["개요","추진 배경","현재 상태","뉴스 분석","선행 신호","충격 사건","지역 분석","내일채움공제","정리","따라 하기"];
   var slides = [].slice.call(document.querySelectorAll('.slide'));
   var cur = 0;
 
