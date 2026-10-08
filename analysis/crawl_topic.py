@@ -1,6 +1,6 @@
 """중소기업 위기 관련 뉴스 크롤링 + 토픽모델링 파이프라인"""
 import urllib.request, urllib.parse, xml.etree.ElementTree as ET
-import re, json, time, collections, datetime
+import re, json, time, collections, datetime, pathlib
 
 QUERIES = [
     "중소기업 위기", "중소기업 부도", "중소기업 자금난", "중소기업 대출 연체",
@@ -78,6 +78,11 @@ for w, c in freq.most_common(30):
     print(f"  {w}: {c}")
 
 # ---------- LDA 토픽모델링 ----------
+# 산출 위치는 스크립트 위치를 기준으로 잡는다. 어느 폴더에서 실행하든
+# 대시보드가 읽는 data/topic.json 에 쓰이도록 한다.
+OUT = pathlib.Path(__file__).resolve().parent.parent / "data" / "topic.json"
+OUT.parent.mkdir(exist_ok=True)
+
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 
@@ -180,5 +185,5 @@ json.dump({
                 '영향을 제거한다.'),
     'reps': reps,
     'sources': collections.Counter(a['source'] for a in articles).most_common(12),
-}, open('topic_result.json', 'w'), ensure_ascii=False, indent=1)
-print("\n저장: topic_result.json")
+}, open(OUT, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print(f"\n저장: {OUT}")

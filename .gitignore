@@ -6,3 +6,6 @@ analysis/_kmap_src.json
 analysis/_nacham_src.csv
 analysis/raw/
 .DS_Store
+__pycache__/
+*.pyc
+topic_result.json
