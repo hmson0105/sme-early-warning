@@ -155,11 +155,20 @@ def add_risk(rows):
     dh = {r["name"]: mean_recent(r.get("dishonor") or []) for r in rows}
     zd, zh = z(dl), z(dh)
 
+    def band(v):
+        if v >= 1.0:  return "위험"
+        if v >= 0.5:  return "경계"
+        if v >= 0.0:  return "주의"
+        return "안정"
+
+    # 화면은 {value, level} 형태를 읽는다. 숫자만 넣으면 지도가 검게 나오고
+    # 우측 패널이 비면서 멈춘다.
     n = 0
     for r in rows:
         parts = [t[r["name"]] for t in (zd, zh) if r["name"] in t]
         if parts:
-            r["risk"] = round(sum(parts) / len(parts), 3)
+            v = round(sum(parts) / len(parts), 3)
+            r["risk"] = {"value": v, "level": band(v)}
             n += 1
         else:
             r["risk"] = None
@@ -213,8 +222,8 @@ def main():
                           "표준화해 평균. 둘 다 값이 클수록 위험.")
     print(f"\n신용위험 종합 산출: {n_risk}/{len(out['regions'])}개 시도")
     top = sorted((r for r in out["regions"] if r.get("risk") is not None),
-                 key=lambda r: -r["risk"])[:3]
-    print("  상위: " + ", ".join(f"{r['name']}({r['risk']:+.2f})" for r in top))
+                 key=lambda r: -r["risk"]["value"])[:3]
+    print("  상위: " + ", ".join(f"{r['name']}({r['risk']['value']:+.2f} {r['risk']['level']})" for r in top))
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
