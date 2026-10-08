@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>중소기업 위기 조기경보 대시보드</title>
-<meta name="description" content="공개 API로 수집한 24개 지표와 뉴스 762건을 결합해 중소기업 부실의 선행 신호를 추적하고, 내일채움공제 해지 위험을 시도별로 추정한 대시보드.">
+<meta name="description" content="공개 API로 수집한 24개 지표와 뉴스 762건으로 중소기업 부실의 선행 신호를 찾고, 내일채움공제 해지 위험을 시도별로 추정한 대시보드.">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -326,379 +326,428 @@ table { font-size: 15px; }
   .readme p { font-size: 14.5px; }
   .chart-box { padding: 17px; }
 }
+/* ===========================================================
+   덱 셸 — 상단바 / 좌측 목차 / 슬라이드 무대 / 하단 이동
+   슬라이드는 모두 DOM 에 남겨 두고 투명도로만 감춘다.
+   display:none 으로 감추면 폭이 0 이 되어 Chart.js 가 크기를
+   잘못 잡는다. 여기서는 모든 슬라이드가 항상 실제 폭을 갖는다.
+   =========================================================== */
+:root { --topbar-h: 56px; --side-w: 252px; --nav-h: 62px; }
+
+body.deck-mode { background: #F2F4F7; overflow: hidden; }
+
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); z-index: 50;
+  display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  background: #fff; border-bottom: 1px solid #E2E7EE;
+}
+.tb-brand { font-size: 14.5px; font-weight: 700; color: #1B3A5C; white-space: nowrap; }
+.tb-sub { font-size: 12.5px; color: #8A9199; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.tb-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.tb-prog { width: 150px; height: 5px; background: #E7ECF2; border-radius: 3px; overflow: hidden; }
+.tb-prog i { display: block; height: 100%; width: 0; background: #2E75B6; transition: width .22s ease; }
+.tb-count { font-size: 12.5px; color: #5C6166; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.side-btn { display: none; width: 36px; height: 32px; border: 1px solid #D5DCE5;
+  background: #fff; border-radius: 6px; cursor: pointer; font-size: 15px; color: #1B3A5C; }
+
+.layout { display: flex; position: fixed; top: var(--topbar-h); left: 0; right: 0; bottom: 0; }
+
+/* ── 좌측 목차 ── */
+.sidebar {
+  width: var(--side-w); flex: none; overflow-y: auto; background: #fff;
+  border-right: 1px solid #E2E7EE; padding: 16px 0 28px;
+}
+.side-title { font-size: 11px; letter-spacing: .14em; color: #9AA3AC;
+  padding: 0 18px 10px; text-transform: uppercase; }
+.toc { list-style: none; }
+.toc-ch { display: flex; align-items: baseline; gap: 9px; padding: 9px 18px;
+  cursor: pointer; font-size: 13.5px; color: #3C434A; line-height: 1.4; }
+.toc-ch:hover { background: #F5F8FB; }
+.toc-ch .no { font-size: 11px; color: #9AA3AC; width: 12px; flex: none; font-weight: 700; }
+.toc-ch .nm { flex: 1; }
+.toc-ch .cnt { font-size: 11px; color: #B4BCC4; }
+.toc-ch.active { background: #EAF2FA; color: #1B3A5C; font-weight: 700; }
+.toc-ch.active .no { color: #2E75B6; }
+.toc-sub { list-style: none; display: none; padding-bottom: 4px; }
+.toc-sub.open { display: block; }
+.toc-sub li { padding: 6px 18px 6px 39px; font-size: 12.5px; color: #6B7280;
+  cursor: pointer; line-height: 1.35; }
+.toc-sub li:hover { color: #1B3A5C; background: #F5F8FB; }
+.toc-sub li.on { color: #2E75B6; font-weight: 700; }
+.side-hint { margin: 14px 18px 0; padding-top: 12px; border-top: 1px solid #EEF1F4;
+  font-size: 11.5px; color: #9AA3AC; line-height: 1.7; }
+.side-hint kbd { background: #F2F4F7; border: 1px solid #DDE3EA; border-radius: 3px;
+  padding: 1px 5px; font-size: 10.5px; font-family: inherit; }
+
+/* ── 무대 ── */
+.stage { flex: 1; position: relative; min-width: 0; }
+.deck { position: absolute; inset: 0 0 var(--nav-h) 0; }
+.slide {
+  position: absolute; inset: 0; overflow-y: auto; padding: 30px 38px 40px;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
+}
+.slide.on { opacity: 1; pointer-events: auto; z-index: 2; }
+.slide-in { max-width: 1000px; margin: 0 auto; }
+
+.s-kicker { font-size: 11.5px; letter-spacing: .13em; color: #2E75B6;
+  font-weight: 700; text-transform: uppercase; margin-bottom: 7px; }
+.slide h2 { font-size: 25px; line-height: 1.34; color: #181A1D; font-weight: 700;
+  margin-bottom: 9px; border: 0; padding: 0; }
+.slide .lede { font-size: 16px; line-height: 1.68; color: #4D5258; max-width: 74ch;
+  margin-bottom: 20px; }
+.slide .chart-box { box-shadow: none; border: 1px solid #E4E8ED; }
+
+/* 큰 숫자 */
+.bignum { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+.bignum div { flex: 1; min-width: 150px; background: #fff; border: 1px solid #E4E8ED;
+  border-radius: 10px; padding: 16px 18px; }
+.bignum b { display: block; font-size: 29px; line-height: 1.15; color: #2E75B6;
+  font-variant-numeric: tabular-nums; }
+.bignum span { display: block; font-size: 13px; color: #6B7280; margin-top: 5px; line-height: 1.5; }
+
+/* 요점 목록 */
+.points { list-style: none; display: grid; gap: 11px; margin-bottom: 18px; }
+.points li { background: #fff; border: 1px solid #E4E8ED; border-radius: 10px;
+  padding: 15px 17px; font-size: 15.5px; line-height: 1.65; color: #3C434A; }
+.points li b { color: #181A1D; }
+.points li .tag { display: inline-block; font-size: 11px; font-weight: 700; color: #2E75B6;
+  background: #EAF2FA; border-radius: 4px; padding: 2px 7px; margin-right: 8px;
+  vertical-align: 1px; }
+
+/* 표지 */
+.cover { display: flex; flex-direction: column; justify-content: center; height: 100%;
+  max-width: 820px; margin: 0 auto; }
+.cover .kick { font-size: 12px; letter-spacing: .16em; color: #2E75B6; font-weight: 700;
+  margin-bottom: 16px; }
+.cover h1 { font-size: 38px; line-height: 1.26; color: #181A1D; margin-bottom: 16px; }
+.cover p { font-size: 17px; line-height: 1.7; color: #4D5258; margin-bottom: 26px; }
+.cover .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cover .chips span { font-size: 12.5px; color: #4D5258; background: #fff;
+  border: 1px solid #E0E6EC; border-radius: 999px; padding: 6px 13px; }
+
+/* ── 하단 이동 ── */
+.navbar { position: absolute; left: 0; right: 0; bottom: 0; height: var(--nav-h);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 0 24px; background: #fff; border-top: 1px solid #E2E7EE; }
+.navbar button { display: inline-flex; align-items: center; gap: 7px;
+  font-size: 13.5px; font-weight: 500; color: #1B3A5C; background: #fff;
+  border: 1px solid #D5DCE5; border-radius: 8px; padding: 9px 16px; cursor: pointer;
+  transition: background .14s ease, border-color .14s ease; }
+.navbar button:hover:not(:disabled) { background: #F2F7FC; border-color: #9FBEDC; }
+.navbar button:disabled { opacity: .36; cursor: default; }
+.nav-mid { text-align: center; min-width: 0; }
+.nav-mid .t { font-size: 12.5px; color: #4D5258; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-mid .d { display: flex; justify-content: center; gap: 5px; margin-top: 6px; }
+.nav-mid .d i { width: 6px; height: 6px; border-radius: 50%; background: #D7DEE6; }
+.nav-mid .d i.on { background: #2E75B6; width: 16px; border-radius: 3px; }
+
+@media (max-width: 900px) {
+  :root { --side-w: 236px; }
+  .side-btn { display: block; }
+  .sidebar { position: fixed; top: var(--topbar-h); bottom: 0; left: 0; z-index: 40;
+    transform: translateX(-100%); transition: transform .2s ease;
+    box-shadow: 2px 0 14px rgba(20,30,45,.09); }
+  .sidebar.open { transform: none; }
+  .tb-sub { display: none; }
+  .slide { padding: 22px 18px 32px; }
+  .slide h2 { font-size: 21px; }
+  .slide .lede { font-size: 15px; }
+  .cover h1 { font-size: 27px; }
+  .navbar { padding: 0 14px; }
+  .navbar button { padding: 8px 12px; font-size: 12.5px; }
+  .chart-grid { grid-template-columns: 1fr !important; }
+}
 </style>
 </head>
-<body>
+<body class="deck-mode">
 
-<div class="header">
-  <h1>중소기업 위기 조기경보 대시보드</h1>
-  <p>뉴스 토픽모델링 × 거시·재무·신용·지역 지표를 결합한 24개 지표 조기경보 체계 | Pilot Study (2026)</p>
+<div class="topbar">
+  <button class="side-btn" id="side-btn" type="button" aria-label="목차 열기">☰</button>
+  <span class="tb-brand">중소기업 위기 조기경보</span>
+  <span class="tb-sub" id="tb-sub">—</span>
+  <span class="tb-right">
+    <span class="tb-prog"><i id="tb-prog"></i></span>
+    <span class="tb-count" id="tb-count">—</span>
+  </span>
 </div>
 
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-title">목차</div>
+    <ul class="toc" id="toc"></ul>
+    <p class="side-hint">
+      <kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>Home</kbd> 처음<br>
+      목차를 누르면 해당 장으로 바로 갑니다.
+    </p>
+  </aside>
 
-<div class="status">
-  <div class="status-grid">
-    <div class="gauge-wrap">
-      <canvas id="gauge" height="150"></canvas>
-      <div class="gauge-val" id="gauge-val">—</div>
-      <div class="gauge-lv" id="gauge-lv">—</div>
-      <div class="gauge-sub" id="gauge-sub">—</div>
-      <div class="legend-bands">
-        <span><i style="background:#2E75B6"></i>안정</span>
-        <span><i style="background:#27AE60"></i>주의</span>
-        <span><i style="background:#F39C12"></i>경계</span>
-        <span><i style="background:#E74C3C"></i>위험</span>
-      </div>
+  <main class="stage">
+    <div class="deck">
+<!-- ch0 -->
+<section class="slide" data-ch="0" data-t="표지">
+  <div class="cover">
+    <div class="kick">공개 데이터 · AI 코딩 도구로 제작</div>
+    <h1>중소기업 위기 조기경보 대시보드</h1>
+    <p>연체율은 이미 부실이 생긴 뒤에 찍히는 숫자입니다.<br>
+       그보다 <b>먼저 움직이는 신호</b>를 찾아 경보로 바꿨습니다.<br>
+       내일채움공제 해지 위험도 지역별로 추정했습니다.</p>
+    <div class="chips">
+      <span>공개 지표 24개</span><span>뉴스 762건</span><span>시도 17곳</span>
+      <span>한국은행 · 통계청 · 공공데이터포털</span>
     </div>
-    <div>
+  </div>
+</section>
+
+<section class="slide" data-ch="0" data-t="한눈에 보기">
+  <div class="slide-in">
+    <div class="s-kicker">한눈에 보기</div>
+    <h2>세 줄로 요약하면</h2>
+    <p class="lede">자세한 근거는 다음 장부터 하나씩 보여드립니다.</p>
+    <ul class="points">
+      <li><span class="tag">01</span><b>신호는 금융에서 먼저 옵니다.</b>
+        어음부도율과 기준금리가 연체율보다 약 <b>6개월</b> 앞서 움직입니다.</li>
+      <li><span class="tag">02</span><b>지역 위험은 기업 수가 아니라 업종이 가릅니다.</b>
+        사업체가 가장 많은 경기도는 오히려 안전한 편입니다.</li>
+      <li><span class="tag">03</span><b>공제 해지는 기업 탓이 아닙니다.</b>
+        해지 사유 1위는 <b>근로자의 이직</b>이고, 전체의 3분의 1입니다.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ch1 -->
+<section class="slide" data-ch="1" data-t="풀고 싶은 문제">
+  <div class="slide-in">
+    <div class="s-kicker">왜 만들었나</div>
+    <h2>연체율을 보고 움직이면 이미 늦습니다</h2>
+    <p class="lede">연체율과 폐업률은 부실이 <b>이미 발생한 뒤</b> 기록되는 숫자입니다.
+       지원이 필요한 시점은 그보다 앞입니다.</p>
+    <ul class="points">
+      <li><b>문제 1 · 늦게 알게 됩니다.</b>
+        연체가 잡힌 시점에는 이미 자금이 막힌 상태입니다.</li>
+      <li><b>문제 2 · 자료가 흩어져 있습니다.</b>
+        금리는 한국은행, 사업체 수는 통계청, 현장 분위기는 뉴스에 있습니다.
+        한 사람이 매달 모으기 어렵습니다.</li>
+      <li><b>문제 3 · 급변기에 대응이 느립니다.</b>
+        관세·전쟁 같은 사건이 터져도 영향이 수치로 나오기까지 몇 달이 걸립니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-ch="1" data-t="묻고 싶은 것">
+  <div class="slide-in">
+    <div class="s-kicker">연구 질문</div>
+    <h2>세 가지를 물었습니다</h2>
+    <ul class="points">
+      <li><span class="tag">Q1</span>연체율보다 <b>먼저 움직이는 지표</b>가 있을까?
+        있다면 몇 개월 앞설까?</li>
+      <li><span class="tag">Q2</span>지역마다 위험이 다른가? 다르다면
+        <b>무엇이 그 차이를 만드나?</b></li>
+      <li><span class="tag">Q3</span>내일채움공제 해지 위험이 높은 지역은
+        <b>어디이고 왜 그런가?</b></li>
+    </ul>
+    <p class="lede">세 질문 모두 <b>공개된 자료만으로</b> 답을 찾는 것이 조건이었습니다.
+       내부 자료는 쓰지 않았습니다.</p>
+  </div>
+</section>
+
+<section class="slide" data-ch="1" data-t="모은 자료">
+  <div class="slide-in">
+    <div class="s-kicker">데이터</div>
+    <h2>어디서 무엇을 모았나</h2>
+    <p class="lede">전부 무료로 공개된 API와 파일입니다. 스크립트를 다시 돌리면 최신으로 갱신됩니다.</p>
+    <div class="bignum">
+      <div><b>24</b><span>공개 지표<br>한국은행 · 통계청</span></div>
+      <div><b>762</b><span>뉴스 기사<br>Google News RSS</span></div>
+      <div><b>17</b><span>시도<br>산업 · 신용 · 고용</span></div>
+      <div><b>132,109</b><span>공제 해지 건수<br>공공데이터포털</span></div>
+    </div>
+    <ul class="points">
+      <li><b>한국은행 ECOS</b> — 연체율, 금리, 어음부도율, 기업 체감경기(BSI), 생산, 수출입</li>
+      <li><b>통계청 KOSIS</b> — 시도별 사업체 수, 시도별 이직, 중소기업 경기지수, 시도 경계 지도</li>
+      <li><b>공공데이터포털</b> — 내일채움공제 중도해지 사유별 현황(중진공)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ch2 -->
+<section class="slide" data-ch="2" data-t="지금 경보 단계">
+  <div class="slide-in">
+    <div class="s-kicker">현재 상태</div>
+    <h2>지금은 어느 단계인가</h2>
+    <p class="lede">지표 <span id="n-ind">—</span>개를 하나의 점수로 합쳐 네 단계로 나눴습니다.
+       <b>0보다 크면 평소보다 나쁜 상태</b>라는 뜻입니다.</p>
+    <div class="status">
+      <div class="gauge-wrap">
+        <canvas id="gauge"></canvas>
+        <div class="gauge-val" id="gauge-val">—</div>
+        <div class="gauge-lv" id="gauge-lv">—</div>
+        <div class="gauge-sub" id="gauge-sub">—</div>
+      </div>
       <div class="kpi-row" id="kpi-row"></div>
-      <div class="insight" style="margin-top:14px;font-size:12.5px">
-        <strong>종합 위기지수</strong>는 수집한 <strong id="n-ind">—</strong>개 지표를 전년동월대비 변화로 바꾼 뒤,
-        위험 방향을 맞춰 표준화(z-score)하고 평균한 값이다. 0보다 클 경우 지표들이 평균 대비 위험한 방향에 위치함을 의미한다.
-        수준(level) 값을 그대로 사용할 경우 추세만으로 상관이 높게 산출되므로 변화율로 환산하여 계산하였다.
-      </div>
+    </div>
+    <div class="readme"><span class="k">읽는 법</span>
+      <p>각 지표를 <b>1년 전 같은 달과 비교</b>해 얼마나 나빠졌는지로 바꾼 뒤,
+         서로 더할 수 있게 같은 자로 맞춰 평균 낸 값입니다.
+         <b>안정 → 주의 → 경계 → 위험</b> 순으로 올라갑니다.</p>
     </div>
   </div>
-</div>
+</section>
 
-<div class="stats-bar">
-  <div class="stat-card"><div class="num">762</div><div class="label">분석 뉴스 기사 (중복 제거)</div></div>
-  <div class="stat-card"><div class="num">10</div><div class="label">크롤링 검색 쿼리</div></div>
-  <div class="stat-card"><div class="num">5</div><div class="label">LDA 토픽</div></div>
-  <div class="stat-card"><div class="num">265</div><div class="label">분석 어휘 수</div></div>
-  <div class="stat-card"><div class="num">24</div><div class="label">수집 지표 계열</div></div>
-</div>
-
-<div class="container">
-
-  <div class="notice">
-    <strong>데이터 안내.</strong> 분석 1의 뉴스 데이터는 Google News RSS에서 실제로 수집한 762건(2026년 9월 17일 기준)을
-    직접 토픽모델링한 결과입니다. 분석 2·3의 거시·신용지표는 <strong>한국은행 ECOS·통계청 KOSIS 오픈API로 직접 수집</strong>했습니다(수집일 <span data-ecos-date>—</span>, 10개 계열 1,030개 관측치). 통계표·항목 코드는 각 차트 아래에 표기했고, 수집 스크립트 <code>analysis/collect_ecos.py</code>를 다시 실행하면 최신 통계로 갱신됩니다.
-    다만 RSS는 최신 기사 비중이 높아, 월별 기사 수의 절대량은 시점 간 직접 비교보다 <strong>토픽 구성 변화</strong>를 읽는 데
-    활용하는 것이 적절합니다.
-  </div>
-
-  <!-- 01 연구 목적 -->
-  <div class="section">
-    <div class="eyebrow-num">01 · Research Purpose</div>
-    <h2>분석 배경 및 목적</h2>
-    <div class="subtitle">중소기업 부실은 사후에 통계로 확인된다. 부실이 표면화되기 이전 단계에서 포착 가능한 선행 신호를 식별하는 것이 본 분석의 목적이다.</div>
-
-    <div class="cardnews cn-3">
-      <div class="cn-card">
-        <span class="no">01</span>
-        <h4>문제</h4>
-        <p>연체율·폐업률은 <b>사후 결과</b>를 기록한 지표이다. 통계 공표 시점에는 이미 지원 적기가 경과한 경우가 많아, 실무상 개입 시점 판단에 활용하기 어렵다.</p>
-      </div>
-      <div class="cn-card">
-        <span class="no">02</span>
-        <h4>착안</h4>
-        <p>부실은 단계적으로 진행된다. <b>인식 → 심리 → 실물 → 신용</b> 순으로 전이되므로, 선행 단계를 관측할 수 있다면 후행 단계에 대한 예고 신호로 활용 가능하다.</p>
-      </div>
-      <div class="cn-card accent">
-        <span class="no">03</span>
-        <h4>목표</h4>
-        <p>공개 API로 수집 가능한 지표를 광범위하게 확보한 뒤, <b>연체율에 선행하는 지표</b>를 식별하여 단일 조기경보 지수로 통합한다.</p>
-      </div>
-    </div>
-
-    <div class="insight" style="margin-top:16px;font-size:12.5px">
-      <strong>분석의 성격.</strong> 본 분석은 인과관계 규명이 아니라 <strong>지표 선정을 위한 탐색적 분석(exploratory analysis)</strong>에 해당한다. 도출된 결과는 가설 수준이며, 확정을 위해서는 인과검정 및 업종·규모별 세분화가 요구된다.
-    </div>
-  </div>
-
-  <!-- 02 연구 질문 -->
-  <div class="section">
-    <div class="eyebrow-num">02 · Research Questions</div>
-    <h2>연구 질문</h2>
-    <div class="subtitle">각 연구 질문은 대시보드의 해당 분석 화면과 1:1로 대응한다.</div>
-
+<section class="slide" data-ch="2" data-t="경보 지수 추이">
+  <div class="slide-in">
+    <div class="s-kicker">현재 상태</div>
+    <h2>지난 8년간 어떻게 움직였나</h2>
+    <p class="lede">0보다 위는 평소보다 나쁜 구간입니다. 코로나와 금리 급등기에 솟아오른 것이 보입니다.</p>
     <div class="chart-box full">
-      <div class="rq">
-        <span class="tag">RQ 0</span>
-        <div>
-          <div class="q">모은 지표 중 무엇이 실제로 중소기업 부실과 함께 움직이는가?</div>
-          <div class="a">→ 24개 지표를 전년동월대비 변화로 바꿔 연체율과의 상관과 시차를 계산.
-            <b>지표 풀과 상관 구조</b> 화면.</div>
-        </div>
-      </div>
-      <div class="rq">
-        <span class="tag">RQ 1</span>
-        <div>
-          <div class="q">뉴스에 드러나는 위기 담론은 어떤 주제로 구성되며 어떻게 변하는가?</div>
-          <div class="a">→ 뉴스 762건을 토픽모델링(LDA)해 5개 주제로 분해.
-            <b>분석 1: 위기인식지수</b> 화면.</div>
-        </div>
-      </div>
-      <div class="rq">
-        <span class="tag">RQ 2</span>
-        <div>
-          <div class="q">뉴스에서 감지된 위기 인식이 실제 재무 지표로 확인되는가?</div>
-          <div class="a">→ 연체율·대출금리·실물지표를 같은 기간으로 놓고 대조.
-            <b>분석 2: 재무·신용 지표</b> 화면.</div>
-        </div>
-      </div>
-      <div class="rq">
-        <span class="tag">RQ 3</span>
-        <div>
-          <div class="q">개별 기업 부실과 지정학·통상 충격은 신용지표에 어떻게 전이되는가?</div>
-          <div class="a">→ 일자가 확인된 충격 사건을 연체율 시계열 위에 겹쳐 대조.
-            <b>분석 3: 타임라인</b> 화면.</div>
-        </div>
-      </div>
-      <div class="rq">
-        <span class="tag">RQ 4</span>
-        <div>
-          <div class="q">산업 구성이 다른 지역 사이에 신용 위험은 어떻게 갈리는가?</div>
-          <div class="a">→ 17개 시도의 산업별 사업체 비중과 중소기업 연체율을 결합.
-            <b>지역별 산업 구조와 신용 지표</b> 화면.</div>
-        </div>
-      </div>
+      <h3>종합 경보 지수 추이</h3>
+      <canvas id="chart-composite"></canvas>
+      <p class="src">모든 지표를 1년 전 대비 변화로 바꾸고, 위험한 방향으로 부호를 맞춘 뒤 평균한 값</p>
     </div>
   </div>
+</section>
 
-  <!-- 03 데이터 수집 -->
-  <div class="section">
-    <div class="eyebrow-num">03 · Data Collection</div>
-    <h2>데이터 수집 방법</h2>
-    <div class="subtitle">전 항목을 공개 API 및 공개 RSS에서 직접 수집하였다. 수치를 코드에 직접 입력한 항목은 없다.</div>
-
-    <div class="flow">
-      <div class="flow-step"><div class="n">STEP 1</div><h5>지표 후보 선정</h5>
-        <p>부실과 연관될 만한 계열을 넓게 훑어 통계표·항목 코드를 특정</p></div>
-      <div class="flow-step"><div class="n">STEP 2</div><h5>API 수집</h5>
-        <p>ECOS·KOSIS 호출. 재시도와 중복 시점 검사를 내장</p></div>
-      <div class="flow-step"><div class="n">STEP 3</div><h5>전처리</h5>
-        <p>전년동월대비 변화로 변환해 추세 제거</p></div>
-      <div class="flow-step"><div class="n">STEP 4</div><h5>상관·시차 분석</h5>
-        <p>시차 0~6개월을 모두 시도해 선행성이 큰 지점 탐색</p></div>
-      <div class="flow-step"><div class="n">STEP 5</div><h5>지수화·시각화</h5>
-        <p>방향 정렬 후 표준화해 평균, JSON 산출</p></div>
-    </div>
-
-    <div class="chart-box full" style="margin-top:16px">
-      <table class="srctbl">
-        <thead><tr><th style="width:23%">출처</th><th style="width:30%">수집 내용</th>
-          <th style="width:17%">규모</th><th>스크립트</th></tr></thead>
-        <tbody>
-          <tr><td><b>한국은행 ECOS</b><br><span class="corr-grp">오픈API</span></td>
-              <td>연체율·대출금리·기준금리·어음부도율·BSI·심리지수·생산·설비투자·재고율·가동률·수출입</td>
-              <td>22개 계열<br>2,288 관측치</td>
-              <td><code>collect_ecos.py</code></td></tr>
-          <tr><td><b>통계청 KOSIS</b><br><span class="corr-grp">오픈API</span></td>
-              <td>중소기업 경기동행종합지수 / 시도·산업별 사업체수·종사자수·매출액</td>
-              <td>2개 계열<br>18개 시도 × 94개 산업</td>
-              <td><code>collect_ecos.py</code><br><code>collect_region.py</code></td></tr>
-          <tr><td><b>Google News RSS</b><br><span class="corr-grp">공개 피드</span></td>
-              <td>중소기업 위기 관련 10개 검색어로 기사 수집 후 LDA 토픽모델링</td>
-              <td>762건<br>어휘 265개</td>
-              <td><code>crawl_topic.py</code></td></tr>
-          <tr><td><b>통계청 시도 경계</b><br><span class="corr-grp">공간정보</span></td>
-              <td>행정경계를 단순화해 SVG 경로로 변환 (7.5MB → 41KB)</td>
-              <td>17개 시도</td>
-              <td><code>build_map.py</code></td></tr>
-        </tbody>
-      </table>
-      <p class="src" style="margin-top:12px">
-        API 키는 저장소에 포함하지 않고 로컬 설정 파일에서 읽는다. 스크립트를 다시 실행하면
-        최신 통계로 갱신되며, 수집 시점과 통계표·항목 코드는 산출 JSON에 함께 기록된다.
-      </p>
-    </div>
-
-    <div class="insight" style="margin-top:16px;font-size:12.5px">
-      <strong>수집 과정에서 걸러낸 함정.</strong> ECOS 연체율표와 KOSIS 경기지수표는
-      <strong>2차원 구조</strong>라 항목을 하나만 지정하면 은행종류·지수종류가 한 계열에 섞여 들어온다.
-      처음 실행 시 102개월 구간에서 306건이 반환되어 발견했고, 이후 같은 실수를 막기 위해
-      <strong>같은 시점이 중복되면 수집을 중단</strong>하는 검사를 넣었다.
-    </div>
-  </div>
-
-  <!-- 분석 1 -->
-  <div class="section">
-    <div class="eyebrow-num">04 · Exploratory Analysis</div>
-    <h2>뉴스 담론은 부실 자체보다 정책 지원에 집중</h2>
-    <div class="subtitle">중소기업 위기 관련 기사 762건을 토픽모델링으로 주제 분류하였다. 주제별 비중은 현장에서 제기되는 관심사의 구성을 보여준다.</div>
+<!-- ch3 -->
+<section class="slide" data-ch="3" data-t="뉴스 주제">
+  <div class="slide-in">
+    <div class="s-kicker">뉴스 분석</div>
+    <h2>기사는 부실보다 지원 이야기를 더 많이 합니다</h2>
+    <p class="lede">중소기업 위기 관련 기사 762건을 모아 주제별로 자동 분류했습니다.</p>
     <div class="chart-grid">
-      <div class="chart-box">
-        <h3>토픽별 기사 수 (LDA, k=5)</h3>
-        <canvas id="chart-topic-docs"></canvas>
-      </div>
-      <div class="chart-box">
-        <h3>상위 키워드 빈도 (Top 12)</h3>
-        <canvas id="chart-keywords"></canvas>
-      </div>
-      <div class="chart-box full">
-        <h3>월별 토픽 구성 변화 (2026)</h3>
-        <canvas id="chart-topic-month"></canvas>
-              </div>
-      <div class="chart-box full">
-        <h3>토픽별 대표 키워드 및 기사</h3>
-        <table>
-          <thead>
-            <tr><th>토픽</th><th>기사 수</th><th style="text-align:left">대표 키워드 (LDA 상위 10)</th><th style="text-align:left">대표 기사</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><span class="tag tag-t1">T1 대출 연체·폐업</span></td><td>156</td>
-              <td class="left">폐업, 연체율, 대출, 은행, 부담, 연체, 경영안정자금, 경영난, 중동, 소진공</td>
-              <td class="left">소상공인 매출·이익 동반 감소에 연체 부담까지… 중소기업 대출 부실 경고등</td>
-            </tr>
-            <tr>
-              <td><span class="tag tag-t2">T2 협력업체 대금·부도</span></td><td>161</td>
-              <td class="left">구조조정, 연체, 미지급, 부도, 협력업체, 대금, 파산, 대출, 증가, 은행권</td>
-              <td class="left">은행권 10년간 부실기업 구조조정 28조 투입…정상화 실패 56%</td>
-            </tr>
-            <tr>
-              <td><span class="tag tag-t3">T3 명절 자금난</span></td><td>132</td>
-              <td class="left">추석, 자금난, 자금, 억원, 운전자금, 창업, 대응, 유동성, 융자, 숨통</td>
-              <td class="left">KB국민은행, 추석 명절 맞이 중소기업 자금 지원으로 포용금융 실천</td>
-            </tr>
-            <tr>
-              <td><span class="tag tag-t4">T4 정책 긴급지원</span></td><td>199</td>
-              <td class="left">위기, 유동성, 경영난, 경영, 중진공, 재도약, 중기부, 폐업, 긴급, 극복</td>
-              <td class="left">소상공인 68% "빚 안고 폐업"…경영 위기 극복 위해 전문가 나선다</td>
-            </tr>
-            <tr>
-              <td><span class="tag tag-t5">T5 수출 부진·고금리</span></td><td>114</td>
-              <td class="left">수출, 부진, 최대, 역대, 기업은행, 대기업, 고금리, 금융지원, 분기, 이자</td>
-              <td class="left">작년 韓수출 대기업 부진에 최악 실적…10대기업 무역비중 37.9%→34.6%</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="insight">
-          <strong>해석:</strong> T2(협력업체 대금·부도)와 T4(정책 긴급지원)에 <strong>중진공·중기부</strong>가 핵심 키워드로
-          등장한다는 점은, 위기 담론이 개별 기업 문제를 넘어 <strong>정책금융 기관의 대응 이슈</strong>로 전환되어 있음을 보여준다.
-          T1에서 '중동'이 키워드로 포착된 것은 지정학 리스크가 중소기업 자금 담론에 이미 반영되어 있음을 시사한다.
-        </div>
-      </div>
+      <div class="chart-box"><h3>주제별 기사 수</h3><canvas id="chart-topic-docs"></canvas></div>
+      <div class="chart-box"><h3>많이 나온 단어 12개</h3><canvas id="chart-keywords"></canvas></div>
     </div>
-  
-    <div class="readme"><span class="k">분석 결과</span><p><b>정책 지원 관련 기사의 비중이 가장 높다.</b> 5개 주제 중 "정책·구제 지원"이 199건으로 최다이며, "협력업체 대금·부도" 161건, "대출 연체·폐업" 156건 순이다.</p><p>언론 보도는 <b>대응 정책</b>에 집중되는 반면, 통계는 <b>이미 발생한 연체</b>를 사후 기록한다. 두 자료가 동일한 위기의 서로 다른 국면을 포착하고 있음을 의미한다.</p><span class="plain">※ 기사 수의 절대량보다 주제 구성의 변화를 해석 대상으로 삼는 것이 적절하다. 뉴스 검색은 최근 기사 비중이 높게 반환되기 때문이다.</span></div>
-  </div>
-
-  <!-- 분석 0: 지표 풀 상관 -->
-  <div class="section">
-    <div class="eyebrow-num">05 · Correlation Structure</div>
-    <h2>연체율에 약 6개월 선행하는 지표 확인</h2>
-    <div class="subtitle">24개 지표와 연체율의 상관 정도 및 선행 시차를 산출하였다.</div>
-    <div class="chart-grid">
-      <div class="chart-box full">
-        <h3>종합 위기지수 추이</h3>
-        <canvas id="chart-composite"></canvas>
-        <p class="src">전 지표를 전년동월대비 변화 → 위험방향 정렬 → z-score 평균. 0 이상이면 평균보다 위험한 국면</p>
-      </div>
-      <div class="chart-box full">
-        <h3><span id="corr-base">—</span>과의 상관 — 지표 <span id="corr-n">—</span>개</h3>
-        <div class="table-scroll" style="max-height:420px;overflow-y:auto">
-          <table class="corr-tbl">
-            <thead><tr>
-              <th style="text-align:left">지표</th><th>상관계수 r</th><th style="width:34%">크기</th>
-              <th>선행 시차</th><th>표본</th>
-            </tr></thead>
-            <tbody id="corr-body"></tbody>
-          </table>
-        </div>
-        <p class="src">
-          붉은 막대는 양(+)의 상관(지표가 오르면 연체율도 오름), 파란 막대는 음(−)의 상관.
-          선행 시차는 0~6개월을 모두 시도해 상관이 가장 컸던 값이다.
-          수준이 아닌 <strong>전년동월대비 변화</strong>로 계산하여 추세에 의한 허위상관을 제거하였다.
-        </p>
-      </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>가장 큰 주제는 '정책 긴급지원'(199건)이었습니다.</b>
+         부도나 폐업 같은 부실 자체보다, 그에 대응하는 지원책이 더 많이 보도됩니다.</p>
+      <p>즉 뉴스는 위기를 <b>앞서 알려주기보다 뒤따라 설명</b>합니다.
+         그래서 뉴스는 보조 자료로 두고, 실제 경보는 통계 지표로 만들었습니다.</p>
     </div>
-  
-    <div class="readme"><span class="k">분석 결과</span><p><b>금융 부문 지표의 선행성이 가장 높다.</b> 연체율과의 상관은 가계대출 연체율(4개월 선행), 어음부도율(6개월 선행), 기준금리(6개월 선행) 순으로 나타난다.</p><p>지표군은 <b>선행 지표(6개월, 10개)</b>와 <b>동행 지표(0개월, 9개)</b>로 뚜렷이 구분된다. 선행 지표를 경보 신호로, 동행 지표를 확인 수단으로 활용하는 2단계 체계 구성이 가능하다.</p><span class="plain">※ 상관계수 r은 두 지표의 동조 정도를 −1~+1로 나타낸 값이다. 양(+)은 같은 방향, 음(−)은 반대 방향을 의미하며 0에 가까울수록 관련성이 낮다.</span></div>
   </div>
+</section>
 
-  <!-- 분석 2 -->
-  <div class="section">
-    <div class="eyebrow-num">06 · Credit Indicators</div>
-    <h2>금리 하락에도 연체율은 정체</h2>
-    <div class="subtitle">조달 비용은 하락하였으나 연체율은 개선되지 않았다. 금리 외 요인이 작용하고 있음을 시사한다.</div>
-    <div class="rng" style="max-width:none;margin:0 0 18px">
-      <span class="rng-label">조회 기간</span>
-      <span class="rng-val" id="fin-val">—</span>
-      <div class="rng-wrap">
+<section class="slide" data-ch="3" data-t="주제의 월별 변화">
+  <div class="slide-in">
+    <div class="s-kicker">뉴스 분석</div>
+    <h2>달마다 화제가 바뀝니다</h2>
+    <div class="chart-box full"><h3>월별 주제 구성</h3><canvas id="chart-topic-month"></canvas></div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p>명절이 있는 달에는 <b>자금난</b> 기사가, 통상 이슈가 있는 달에는
+         <b>수출 부진</b> 기사가 늘어납니다. 현장의 관심사가 달마다 이동한다는 뜻입니다.</p>
+      <span class="plain">※ 주제 분류는 기사에 함께 등장하는 단어 묶음을 기계가 자동으로 나눈 결과입니다.
+        사람이 정한 분류가 아닙니다.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ch4 -->
+<section class="slide" data-ch="4" data-t="먼저 움직이는 지표">
+  <div class="slide-in">
+    <div class="s-kicker">선행 신호</div>
+    <h2>연체율보다 6개월 먼저 움직이는 지표를 찾았습니다</h2>
+    <p class="lede">지표마다 <b>0~6개월씩 시차를 두고</b> 연체율과 얼마나 같이 움직이는지 계산했습니다.
+       가장 잘 맞는 시차가 그 지표의 '선행 기간'입니다.</p>
+    <div class="chart-box full">
+      <h3><span id="corr-base">—</span>과 함께 움직이는 정도 — 지표 <span id="corr-n">—</span>개</h3>
+      <div class="tbl-wrap"><table><thead><tr>
+        <th>지표</th><th>구분</th><th>상관</th><th>선행(개월)</th><th>방향</th>
+      </tr></thead><tbody id="corr-body"></tbody></table></div>
+    </div>
+    <div class="readme"><span class="k">읽는 법</span>
+      <p><b>상관</b>은 두 지표가 같이 움직이는 정도입니다. 1에 가까울수록 함께 움직이고,
+         0이면 관계가 없습니다. <b>선행</b>은 몇 개월 먼저 움직이는지를 뜻합니다.</p>
+      <p>가계대출 연체율이 <b>4개월 앞서</b>(0.72), 어음부도율과 기준금리가
+         <b>6개월 앞서</b>(0.47) 움직입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="4" data-t="연체율 추이">
+  <div class="slide-in">
+    <div class="s-kicker">선행 신호</div>
+    <h2>금리는 내렸는데 연체는 그대로입니다</h2>
+    <div class="rng">
+      <div class="rng-head"><span>기간</span><span class="rng-val" id="fin-val">—</span></div>
+      <div class="rng-body">
         <div class="rng-track"><div class="rng-fill" id="fin-fill"></div></div>
-        <input type="range" class="rng-slider" id="fin-min" step="1">
-        <input type="range" class="rng-slider" id="fin-max" step="1">
+        <input type="range" id="fin-min"><input type="range" id="fin-max">
       </div>
       <button class="rng-reset" id="fin-reset" type="button">전체</button>
     </div>
     <div class="chart-grid">
-      <div class="chart-box">
-        <h3>은행 대출 연체율 — 기업 vs 가계 (2020~)</h3>
-        <canvas id="chart-delinq"></canvas>
-        <p class="src">한국은행 ECOS 901Y054 · 1일 이상 연체, 은행전체 기준</p>
-      </div>
-      <div class="chart-box">
-        <h3>대출금리 — 중소기업·대기업·기준금리</h3>
-        <canvas id="chart-closure"></canvas>
-        <p class="src">한국은행 ECOS 121Y015 · 예금은행 잔액 기준 / 722Y001</p>
-      </div>
-      <div class="chart-box full">
-        <h3>실물지표 — 설비투자·생산·중소기업 경기·어음부도율</h3>
-        <canvas id="chart-real"></canvas>
-        <p class="src">한국은행 ECOS 901Y066 · 901Y033 · 801Y002 / 통계청 KOSIS 303·DT_303005_CI001</p>
-      </div>
-      <div class="chart-box full">
-              </div>
+      <div class="chart-box"><h3>기업대출 연체율</h3><canvas id="chart-delinq"></canvas></div>
+      <div class="chart-box"><h3>기준금리와 비교</h3><canvas id="chart-closure"></canvas></div>
     </div>
-  
-    <div class="readme"><span class="k">분석 결과</span><p><b>조달 비용은 하락하였다.</b> 중소기업 대출금리는 2023년 11월 5.36%에서 2026년 7월 4.32%로 하락하였고 기준금리도 3.0% 수준이다. 그러나 <b>연체율은 0.8%에서 정체되어 있다.</b></p><p>중소기업 체감경기(BSI)는 <b>관측 전 기간 기준선 100을 하회</b>하였다(평균 67). BSI 100은 호전 응답과 악화 응답이 동수임을 의미하므로, 중소기업은 경기 국면과 무관하게 지속적으로 악화를 체감해 온 것으로 해석된다.</p><span class="plain">※ 따라서 BSI는 "70 이하 시 위험"과 같은 절대 기준이 아니라 전년 동월 대비 변동폭으로 판단하는 것이 타당하다.</span></div>
-  </div>
-
-  <!-- 분석 3 -->
-  <div class="section">
-    <div class="eyebrow-num">07 · Shock Timeline</div>
-    <h2>충격 사건 시점과 연체율 추이 대조</h2>
-    <div class="subtitle">홈플러스 회생 신청, 미국 상호관세, 중동 확전 등 일자가 확인된 사건을 연체율 시계열에 병렬 표시하였다.</div>
-    <div class="chart-grid">
-      <div class="chart-box full">
-        <h3>연체율·종합지수와 주요 충격 이벤트</h3>
-        <div class="rng">
-          <span class="rng-label">조회 기간</span>
-          <span class="rng-val" id="rng-val">—</span>
-          <div class="rng-wrap">
-            <div class="rng-track"><div class="rng-fill" id="rng-fill"></div></div>
-            <input type="range" class="rng-slider" id="rng-min" step="1">
-            <input type="range" class="rng-slider" id="rng-max" step="1">
-          </div>
-          <button class="rng-reset" id="rng-reset" type="button">전체</button>
-        </div>
-        <canvas id="chart-timeline"></canvas>
-        <p class="tl-hint">양 끝 핸들을 끌어 기간을 좁히면 차트와 아래 사건 목록이 함께 바뀝니다.</p>
-        <div class="evt-list" id="evt-list"></div>
-              </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>금리가 내려가도 연체율은 따라 내려오지 않았습니다.</b>
+         연체율은 가장 낮았던 때의 약 <b>3배</b> 수준에 머물러 있습니다.</p>
+      <p>이자 부담이 줄어도 이미 쌓인 빚과 매출 부진은 그대로라는 뜻입니다.
+         금리 인하만으로 회복을 기대하기 어렵습니다.</p>
     </div>
-  
-    <div class="readme"><span class="k">분석 결과</span><p><b>사건 발생 시점에 연체율이 즉시 반응하지는 않는다.</b> 홈플러스 회생 신청(2025.3.4), 미국 관세 통보(2025.7.7), 중동 확전(2026.2.28) 모두 표시 시점 직후의 급등은 관측되지 않는다.</p><p>연체는 <b>일정 기간에 걸쳐 누적된다.</b> 거래처 대금 지연이 수개월의 시차를 두고 대출 상환 부담으로 전이되는 구조이므로, 사건과 지표를 연계해 해석할 경우 수개월 후 구간을 확인할 필요가 있다.</p><span class="plain">※ 본 시계열은 은행 기업대출 전체 기준으로, 특정 기업의 협력업체 피해가 직접 반영되지는 않는다. 사건 표시는 시점 대조를 위한 참조선이며 인과관계의 근거가 아니다.</span></div>
   </div>
+</section>
 
-  <!-- 지표 체계 -->
-  <!-- 지역별 산업·신용 지도 -->
-  <div class="section">
-    <div class="eyebrow-num">08 · Regional Analysis</div>
-    <h2>사업체 수와 신용위험은 비례하지 않음</h2>
-    <div class="subtitle">지역별 주력 산업 구성과 중소기업 연체율의 관계를 시도 단위로 분석하였다.</div>
+<section class="slide" data-ch="4" data-t="생산·체감경기">
+  <div class="slide-in">
+    <div class="s-kicker">선행 신호</div>
+    <h2>체감경기는 숫자보다 '방향'으로 봐야 합니다</h2>
+    <div class="chart-box full"><h3>생산·투자·체감경기</h3><canvas id="chart-real"></canvas></div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p>중소기업 체감경기(BSI)는 <b>관측 기간 내내 기준선 아래</b>에 있었습니다.
+         "100 미만이면 경보"처럼 정해두면 늘 경보가 울립니다.</p>
+      <p>그래서 절대값이 아니라 <b>좋아지는 중인지 나빠지는 중인지</b>를 봐야 합니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ch5 -->
+<section class="slide" data-ch="5" data-t="충격 사건">
+  <div class="slide-in">
+    <div class="s-kicker">사건 대조</div>
+    <h2>큰 사건이 터져도 연체율은 바로 오르지 않습니다</h2>
+    <p class="lede">날짜가 확인된 사건만 연체율 그래프 위에 표시했습니다.</p>
+    <div class="rng">
+      <div class="rng-head"><span>기간</span><span class="rng-val" id="rng-val">—</span></div>
+      <div class="rng-body">
+        <div class="rng-track"><div class="rng-fill" id="rng-fill"></div></div>
+        <input type="range" id="rng-min"><input type="range" id="rng-max">
+      </div>
+      <button class="rng-reset" id="rng-reset" type="button">전체</button>
+    </div>
+    <div class="chart-box full"><canvas id="chart-timeline"></canvas></div>
+    <div class="evt-list" id="evt-list"></div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p>홈플러스 회생 신청(2025.3.4), 미국 관세 통보(2025.7.7), 중동 확전(2026.2.28)
+         <b>모두 직후에는 연체율이 튀지 않았습니다.</b></p>
+      <p>거래처 대금이 밀리고, 그것이 대출 상환 부담으로 번지기까지 <b>몇 달이 걸리기</b> 때문입니다.
+         사건이 생기면 그 달이 아니라 <b>몇 달 뒤를 봐야</b> 합니다.</p>
+      <span class="plain">※ 표시선은 시점을 맞춰보기 위한 참고선이며, 그 사건이 연체를 일으켰다는 근거는 아닙니다.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ch6 -->
+<section class="slide" data-ch="6" data-t="지역 지도">
+  <div class="slide-in">
+    <div class="s-kicker">지역 분석</div>
+    <h2>기업이 많다고 위험한 것은 아닙니다</h2>
     <div class="chart-box full">
       <div class="map-ctl">
-        <label for="map-ind">산업</label>
-        <select id="map-ind"></select>
-        <label for="map-metric" style="margin-left:6px">색상 기준</label>
+        <label for="map-ind">산업</label><select id="map-ind"></select>
+        <label for="map-metric">색 기준</label>
         <select id="map-metric">
-          <option value="risk">지역 종합 위기지수</option>
-          <option value="delinq">중소기업대출 연체율</option>
+          <option value="risk">신용위험 종합</option>
+          <option value="delinq">중소기업 연체율</option>
           <option value="dishonor">어음부도율</option>
-          <option value="biz">사업체수</option>
-          <option value="emp">종사자수</option>
-          <option value="sales">매출액</option>
+          <option value="share">해당 산업 비중</option>
         </select>
         <span class="src" id="map-asof" style="margin-left:auto"></span>
       </div>
       <div class="map-wrap">
         <div>
           <svg id="kmap" class="cart" viewBox="0 0 460 600" role="img"
-               aria-label="시도별 지표 지도"></svg>
+               aria-label="시도별 위험도 지도"></svg>
           <div class="map-legend">
             <div class="bar"></div>
             <div class="ends"><span id="map-lo">—</span><span id="map-hi">—</span></div>
@@ -706,132 +755,194 @@ table { font-size: 15px; }
         </div>
         <div class="map-side" id="map-side"></div>
       </div>
-
-      <div class="chart-grid" style="margin-top:20px">
-        <div class="chart-box">
-          <h3 id="ts-title">지역 시계열</h3>
-          <canvas id="chart-region-ts"></canvas>
-          <p class="src">지도에서 시도를 클릭하면 해당 지역 추이로 바뀝니다. 회색은 전국 평균</p>
-        </div>
-        <div class="chart-box">
-          <h3>산업 구성과 연체율</h3>
-          <canvas id="chart-region-scatter"></canvas>
-          <p class="src" id="scatter-note">가로축 = 선택 산업의 사업체 비중, 세로축 = 중소기업대출 연체율</p>
-        </div>
-      </div>
       <p class="src" id="map-src"></p>
     </div>
-  
-    <div class="readme"><span class="k">분석 결과</span><p><b>서비스업 비중이 높은 지역에서 연체율이 높게 나타난다.</b> 전문·과학기술 서비스업 비중과 연체율의 상관이 +0.64로 가장 높고 도매·소매업이 +0.43으로 뒤를 잇는다. 반면 <b>제조업(−0.36)과 건설업(−0.59)</b> 비중이 높은 지역은 낮게 나타난다.</p><p>사업체 수와는 관련성이 확인되지 않는다. 사업체 수 1위인 경기(160만)는 위험도 하위(−0.60), 2위인 서울(118만)은 상위(+0.99)에 위치한다.</p><span class="plain">※ 서비스업 비중이 높은 지역은 대부분 대도시에 해당하여, 산업 구성 효과와 도시 규모 효과를 본 자료만으로 분리할 수 없다. 광주(+2.59)는 어음부도율 단일 항목이 높게 산출된 사례로, 단월 값이 아닌 추세 확인이 필요하다.</span></div>
-  </div>
-
-
-  <!-- 내일채움공제 -->
-  <div class="section">
-    <div class="eyebrow-num">09 · Deferred Compensation</div>
-    <h2>공제 해지의 3분의 2는 기업이 아니라 사람이 떠나서 발생한다</h2>
-    <div class="subtitle">내일채움공제 중도해지 132,109건의 사유 구성을 확인하고, 각 사유에 대응하는 공개 지역지표로 시도별 해지 위험을 추정하였다.</div>
-
-    <div class="chart-grid">
-      <div class="chart-box">
-        <h3>중도해지 사유 상위 8 (전국 누적)</h3>
-        <canvas id="chart-nc-reason"></canvas>
-        <p class="src" id="nc-reason-src">—</p>
-      </div>
-      <div class="chart-box">
-        <h3>귀책계약자 구성</h3>
-        <canvas id="chart-nc-blame"></canvas>
-        <p class="src">기업 귀책은 폐업·권고사직·납입부담, 핵심인력 귀책은 이직·학업·창업 등을 포함한다.</p>
-      </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>사업체 수와 위험은 비례하지 않습니다.</b> 사업체가 가장 많은 경기(160만)는
+         위험이 낮은 쪽이고, 두 번째인 서울(118만)은 높은 쪽입니다.</p>
     </div>
+  </div>
+</section>
 
-    <div class="readme"><span class="k">분석 결과</span><p><b>해지 사유의 최대 항목은 '이직에 의한 퇴직'이다.</b> 전체 <span id="nc-total">—</span>건 중 <span id="nc-quit-share">—</span>를 차지한다. 귀책계약자 기준으로는 핵심인력이 <span id="nc-blame-emp">—</span>, 기업이 <span id="nc-blame-firm">—</span>이다.</p><p>이는 <b>공제 해지 위험이 기업 부실만의 문제가 아님</b>을 보여준다. 기업이 정상적으로 운영되더라도 근로자가 이직하면 해지로 이어진다. 따라서 해지 위험이 높은 지역을 찾으려면 기업 신용지표와 함께 <b>노동 이동성</b>을 보아야 한다.</p></div>
+<section class="slide" data-ch="6" data-t="지역 추이와 업종">
+  <div class="slide-in">
+    <div class="s-kicker">지역 분석</div>
+    <h2>위험을 가르는 것은 업종 구성입니다</h2>
+    <div class="chart-grid">
+      <div class="chart-box"><h3 id="ts-title">지역 추이</h3><canvas id="chart-region-ts"></canvas></div>
+      <div class="chart-box"><h3>업종 비중과 연체율</h3><canvas id="chart-region-scatter"></canvas>
+        <p class="src" id="scatter-note">가로축 = 선택 산업의 사업체 비중, 세로축 = 중소기업 연체율</p></div>
+    </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>서비스업 비중이 높은 지역일수록 연체율이 높습니다.</b>
+         전문·과학기술 서비스업 비중과 연체율의 관계가 +0.64로 가장 뚜렷합니다.</p>
+      <p>반대로 <b>제조업(−0.36)과 건설업(−0.59)</b> 비중이 높은 지역은 낮게 나옵니다.</p>
+      <span class="plain">※ 서비스업 비중이 높은 곳은 대부분 대도시입니다. 업종 때문인지 도시 규모 때문인지는
+        이 자료만으로 나눌 수 없습니다.</span>
+    </div>
+  </div>
+</section>
 
-    <div class="chart-box full" style="margin-top:20px">
-      <h3>시도별 해지 위험 추정</h3>
-      <p class="src" style="margin:0 0 10px">지역별 해지 통계는 공개되지 않는다. 위 사유 비중을 가중치로 삼아 대응하는 공개 지역지표를 결합한 <b>추정치</b>이며, 실제 해지율이 아니다.</p>
-      <canvas id="chart-nc-region" style="max-height:420px"></canvas>
+<!-- ch7 -->
+<section class="slide" data-ch="7" data-t="해지 사유">
+  <div class="slide-in">
+    <div class="s-kicker">내일채움공제</div>
+    <h2>해지 사유 1위는 '이직'입니다</h2>
+    <p class="lede">중도해지 <span id="nc-total">—</span>건이 왜 발생했는지 실제 집계를 확인했습니다.</p>
+    <div class="chart-grid">
+      <div class="chart-box"><h3>해지 사유 상위 8</h3><canvas id="chart-nc-reason"></canvas>
+        <p class="src" id="nc-reason-src">—</p></div>
+      <div class="chart-box"><h3>누구 때문에 해지되나</h3><canvas id="chart-nc-blame"></canvas>
+        <p class="src">기업 측은 폐업·권고사직·납입부담, 핵심인력 측은 이직·학업·창업 등입니다.</p></div>
+    </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>가장 많은 사유는 '이직에 의한 퇴직'(<span id="nc-quit-share">—</span>)입니다.</b>
+         귀책을 기준으로 보면 핵심인력이 <span id="nc-blame-emp">—</span>,
+         기업이 <span id="nc-blame-firm">—</span>입니다.</p>
+      <p>즉 <b>회사가 멀쩡해도 사람이 떠나면 해지</b>됩니다.
+         해지 위험을 보려면 기업 재무만이 아니라 <b>사람이 얼마나 자주 옮기는지</b>도 봐야 합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="7" data-t="지역별 해지 위험">
+  <div class="slide-in">
+    <div class="s-kicker">내일채움공제</div>
+    <h2>어느 지역을 먼저 챙겨야 할까</h2>
+    <p class="lede">지역별 해지 통계는 공개되지 않습니다. 그래서 <b>위 사유 비중을 그대로 가중치로 써서</b>
+       대응하는 공개 지표를 합쳤습니다. 실제 해지율이 아니라 <b>추정</b>입니다.</p>
+    <div class="chart-box full">
+      <canvas id="chart-nc-region" style="max-height:400px"></canvas>
       <div id="nc-weights" class="nc-w"></div>
     </div>
-
-    <div class="readme"><span class="k">분석 결과</span><p id="nc-finding">—</p><p><b>가중치는 임의로 정하지 않았다.</b> 전국 해지 실적에서 각 사유가 차지하는 건수 비중을 그대로 사용하였다. 대응하는 공개 지역지표가 있는 사유는 전체의 <span id="nc-cov">—</span>이며, 나머지(개인 경제적 부담·학업·기타)는 지수에 반영되지 않는다.</p><span class="plain">※ 이직률은 공제 가입자가 아니라 지역 전체 사업체를 센 값이다. 전국 사유 비중이 모든 지역에서 동일하다고 가정하였으며 이를 검증할 공개 자료는 없다. 순위는 점검 우선순위를 정하는 참고치이며 인과관계의 근거가 아니다. 세종은 시도별 연체율·어음부도율이 제공되지 않아 노동지표만으로 산출되었다.</span></div>
-
-    <div class="chart-box full" style="margin-top:20px">
-      <h3>공제사업 활용 방안</h3>
-      <div class="impl-grid">
-        <div class="impl">
-          <h4>해지 위험 상위 지역 선제 안내</h4>
-          <p>추정 상위 지역의 가입기업·가입자를 대상으로 만기 혜택과 중도해지 시 손실을 사전 안내한다. 이직이 최대 사유인 만큼 안내 대상은 기업뿐 아니라 <b>핵심인력 본인</b>이어야 한다.</p>
-        </div>
-        <div class="impl">
-          <h4>귀책 유형별 대응 분리</h4>
-          <p>기업 재무 악화가 두드러지는 지역은 정책자금·경영지원과 연계하고, 자발적 이직이 두드러지는 지역은 재직 유인 강화에 초점을 둔다. 같은 '위험'이라도 처방이 다르다.</p>
-        </div>
-        <div class="impl">
-          <h4>월 단위 모니터링</h4>
-          <p>사용 지표가 모두 월 단위 공개 API이므로 스크립트 재실행만으로 갱신된다. 분기·연 단위 내부 집계보다 빠르게 변화를 감지할 수 있다.</p>
-        </div>
-      </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p id="nc-finding">—</p>
+      <p><b>가중치는 임의로 정하지 않았습니다.</b> 실제 해지 건수에서 각 사유가 차지하는 비중을
+         그대로 썼습니다. 지역 지표로 설명되는 사유는 전체의
+         <span id="nc-cov">—</span>이고, 나머지(개인 사정·학업 등)는 반영되지 않았습니다.</p>
+      <span class="plain">※ 이직률은 공제 가입자가 아니라 지역 전체 사업체 기준입니다.
+        전국의 사유 비중이 모든 지역에서 같다고 가정했습니다. 순위는 점검 순서를 정하는 참고치입니다.
+        세종은 시도별 연체율이 제공되지 않아 고용 지표만으로 계산했습니다.</span>
     </div>
   </div>
+</section>
 
-  <!-- 분석 결과 -->
-  <div class="section">
-    <div class="eyebrow-num">10 · SUMMARY</div>
-    <h2>종합</h2>
-    <div class="subtitle">각 분석 화면에서 도출된 결과를 네 항목으로 요약하였다.</div>
+<section class="slide" data-ch="7" data-t="공제사업 활용">
+  <div class="slide-in">
+    <div class="s-kicker">내일채움공제</div>
+    <h2>이걸로 무엇을 할 수 있나</h2>
+    <ul class="points">
+      <li><span class="tag">01</span><b>위험 상위 지역을 먼저 안내합니다.</b>
+        만기 혜택과 중도해지 시 손해를 미리 알립니다. 해지 사유 1위가 이직이므로
+        안내 대상은 기업뿐 아니라 <b>근로자 본인</b>이어야 합니다.</li>
+      <li><span class="tag">02</span><b>이유에 따라 처방을 나눕니다.</b>
+        기업 재무가 나쁜 지역은 정책자금·경영지원과 연결하고,
+        이직이 많은 지역은 재직 유인을 강화합니다. 같은 '위험'이라도 대응이 다릅니다.</li>
+      <li><span class="tag">03</span><b>매달 자동으로 갱신됩니다.</b>
+        쓰는 지표가 전부 월 단위 공개 API라 스크립트만 다시 돌리면 됩니다.
+        분기·연 단위 집계보다 빠르게 변화를 봅니다.</li>
+    </ul>
+  </div>
+</section>
 
+<!-- ch8 -->
+<section class="slide" data-ch="8" data-t="알아낸 것">
+  <div class="slide-in">
+    <div class="s-kicker">정리</div>
+    <h2>네 가지를 확인했습니다</h2>
     <div class="cardnews cn-2">
-      <div class="cn-card">
-        <span class="no">01</span>
-        <h4>신호는 금융 쪽에서 먼저 나온다</h4>
-        <p>어음부도율·기준금리가 연체율에 <b>약 6개월</b> 선행한다. 기업 체감지표나 생산 실적보다 금융 지표의 반응이 빠르다.</p>
-      </div>
-      <div class="cn-card">
-        <span class="no">02</span>
-        <h4>체감지표는 방향으로 읽어야 한다</h4>
-        <p>중소기업 BSI는 관측 전 기간 기준선을 하회하였다. 절대값 기준 경보 설정 시 <b>상시 발령 상태</b>가 된다.</p>
-      </div>
-      <div class="cn-card">
-        <span class="no">03</span>
+      <div class="cn-card"><span class="no">01</span>
+        <h4>신호는 금융에서 먼저 온다</h4>
+        <p>어음부도율·기준금리가 연체율보다 <b>약 6개월</b> 앞섭니다.
+           체감경기나 생산보다 금융 지표가 빠릅니다.</p></div>
+      <div class="cn-card"><span class="no">02</span>
+        <h4>체감경기는 방향으로 읽는다</h4>
+        <p>중소기업 BSI는 내내 기준선 아래였습니다.
+           절대값으로 경보를 걸면 <b>늘 울립니다</b>.</p></div>
+      <div class="cn-card"><span class="no">03</span>
         <h4>전체는 안정, 연체는 미해결</h4>
-        <p>종합지수는 '안정' 구간이나 연체율은 저점의 <b>3배</b> 수준이다. 금리 하락에도 연체율은 동반 하락하지 않았다.</p>
-      </div>
-      <div class="cn-card accent">
-        <span class="no">04</span>
-        <h4>지역 위험은 산업이 가른다</h4>
-        <p>사업체 수가 아니라 <b>산업 구성</b>이 위험도를 좌우한다. 서비스업 비중이 높은 대도시의 취약성이 상대적으로 높다.</p>
-      </div>
-    </div>
-
-    <div class="chart-box full" style="margin-top:20px">
-      <h3>이 분석으로 할 수 있는 것과 없는 것</h3>
-      <div class="impl-grid">
-        <div class="impl">
-          <h5>할 수 있는 것</h5>
-          <p>6개월 선행 지표를 <b>경보 후보군</b>으로 선정하고, 지역·산업별 <b>점검 우선순위</b>를 설정하는 데 활용 가능하다.</p>
-        </div>
-        <div class="impl">
-          <h5>할 수 없는 것</h5>
-          <p><b>인과관계 규명은 불가하다.</b> 동조 관계까지만 확인하였으며, 경기 등 공통 요인이 두 지표를 동시에 움직였을 가능성을 배제하지 못하였다.</p>
-        </div>
-        <div class="impl">
-          <h5>다음 단계</h5>
-          <p>인과검정(Granger) 및 업종·규모별 세분화가 필요하다. 지역 분석은 단일 시점 기준이므로 <b>시계열 확장</b> 시 지역 고유 특성의 통제가 가능하다.</p>
-        </div>
-      </div>
-      <p class="src" style="margin-top:14px">
-        관측 기간(2018~2026)에는 코로나, 급격한 금리 변동, 통상 마찰, 중동 확전이 모두 들어 있다.
-        여기서 얻은 6개월 선행이 평시에도 유지되는지는 확인되지 않았다.
-        회사채 스프레드·신용등급 등의 지표는 공개 API가 제공되지 않아 포함하지 못하였다.
-      </p>
+        <p>종합 점수는 '안정'이지만 연체율은 저점의 <b>3배</b>입니다.
+           금리가 내려도 같이 내려오지 않았습니다.</p></div>
+      <div class="cn-card accent"><span class="no">04</span>
+        <h4>공제 해지는 사람이 떠나서 생긴다</h4>
+        <p>해지의 <b>3분의 2</b>가 근로자 측 사유이고 1위는 이직입니다.
+           기업 재무만 봐서는 놓칩니다.</p></div>
     </div>
   </div>
+</section>
 
-<div class="footer">
-  중소기업 위기 조기경보 대시보드 &nbsp;|&nbsp; 손혜미<br>
-  Data: 한국은행 ECOS · 통계청 KOSIS · 공공데이터포털(중소벤처기업진흥공단) · Google News RSS<br>
-  사용 데이터는 전부 공개 API·공개 파일이며 내부·비공개 자료는 포함하지 않았다.
+<section class="slide" data-ch="8" data-t="한계">
+  <div class="slide-in">
+    <div class="s-kicker">정리</div>
+    <h2>할 수 있는 것과 없는 것</h2>
+    <div class="impl-grid">
+      <div class="impl"><h4>할 수 있는 것</h4>
+        <p>어느 지역·업종을 <b>먼저 들여다볼지</b> 순서를 정할 수 있습니다.
+           매달 같은 기준으로 다시 계산되므로 변화를 추적할 수 있습니다.</p></div>
+      <div class="impl"><h4>할 수 없는 것</h4>
+        <p>특정 기업이 부실해질지는 <b>알 수 없습니다.</b> 모든 자료가 지역·전국 단위 집계입니다.
+           개별 기업 판단에는 쓸 수 없습니다.</p></div>
+      <div class="impl"><h4>주의할 점</h4>
+        <p>같이 움직인다고 <b>원인은 아닙니다.</b> 관측 기간에 코로나·급격한 금리 변동·통상 마찰이
+           모두 들어 있어, 평상시에도 같은 관계가 유지될지는 확인되지 않았습니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ch9 -->
+<section class="slide" data-ch="9" data-t="분석 방법">
+  <div class="slide-in">
+    <div class="s-kicker">방법</div>
+    <h2>어떻게 계산했나</h2>
+    <ul class="points">
+      <li><span class="tag">1</span><b>1년 전과 비교합니다.</b>
+        원래 숫자끼리 비교하면 둘 다 세월에 따라 커진다는 이유만으로 "관계가 깊다"는
+        착시가 생깁니다. 그래서 <b>1년 전 같은 달 대비 변화</b>로 바꿔서 비교했습니다.</li>
+      <li><span class="tag">2</span><b>시차를 0~6개월까지 넣어봅니다.</b>
+        지표를 한 달씩 당겨가며 연체율과 가장 잘 맞는 지점을 찾습니다.
+        그 지점이 '몇 개월 먼저 움직이는가'입니다.</li>
+      <li><span class="tag">3</span><b>단위가 다른 지표를 같은 자로 맞춥니다.</b>
+        %와 지수를 그냥 더할 수 없으므로, 각 지표를 평균에서 얼마나 떨어져 있는지로
+        바꾼 뒤 평균 냈습니다. 그 값이 종합 점수입니다.</li>
+      <li><span class="tag">4</span><b>지역 지표는 6개월 평균을 씁니다.</b>
+        한 달 값만 쓰면 순위가 흔들립니다. 실제로 광주 어음부도율은
+        2026년 7월 0.12%에서 8월 2.59%로 한 달 만에 뛰었습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="만든 방법">
+  <div class="slide-in">
+    <div class="s-kicker">방법</div>
+    <h2>AI 코딩 도구로 만들었습니다</h2>
+    <p class="lede">개발 인력이나 외주 없이, 실무자가 AI와 대화하면서 직접 만들었습니다.
+       코드는 모두 공개되어 있어 그대로 따라 할 수 있습니다.</p>
+    <ul class="points">
+      <li><span class="tag">01</span><b>수집</b> — 한국은행·통계청 API에서 지표를 받아오는 코드를
+        대화로 작성했습니다.</li>
+      <li><span class="tag">02</span><b>오류 해결</b> — 같은 달이 여러 번 들어오는 문제(102개월인데 306건)를
+        함께 찾아 중복 검사로 막았습니다.</li>
+      <li><span class="tag">03</span><b>분석</b> — 1년 전 대비 변환, 시차 상관, 종합 점수 계산을 코드로 옮겼습니다.</li>
+      <li><span class="tag">04</span><b>화면·배포</b> — 이 화면을 만들고 깃허브에 올렸습니다.
+        링크만 있으면 누구나 볼 수 있습니다.</li>
+    </ul>
+    <div class="readme"><span class="k">준비물</span>
+      <p>무료 API 키 2개(한국은행·통계청), AI 코딩 도구, 그리고 "무엇을 알고 싶은지"를
+         정리한 질문. 설치할 프로그램은 없습니다.</p>
+    </div>
+  </div>
+</section>
+    </div>
+
+    <nav class="navbar">
+      <button id="nav-prev" type="button">‹ 이전</button>
+      <div class="nav-mid">
+        <div class="t" id="nav-title">—</div>
+        <div class="d" id="nav-dots"></div>
+      </div>
+      <button id="nav-next" type="button">다음 ›</button>
+    </nav>
+  </main>
 </div>
 
 <script>
@@ -1658,7 +1769,110 @@ Promise.all([
   redraw();
 }).catch(e => console.error('지역 데이터 로드 실패', e));
 
-</script>
 
+/* ── 덱 이동 ───────────────────────────────────────────────
+   슬라이드는 전부 DOM 에 남아 있고 .on 클래스로만 보인다.
+   감춘 슬라이드도 실제 크기를 가지므로 Chart.js 가 처음부터
+   올바른 폭으로 그린다. 주소의 #숫자 가 현재 장을 가리킨다. */
+(function () {
+  var CH = ["들어가며","왜 만들었나","지금 상태","뉴스가 본 위기","먼저 움직이는 지표","충격 사건","지역 위험","내일채움공제","정리","방법"];
+  var slides = [].slice.call(document.querySelectorAll('.slide'));
+  var cur = 0;
+
+  var elProg  = document.getElementById('tb-prog');
+  var elCount = document.getElementById('tb-count');
+  var elSub   = document.getElementById('tb-sub');
+  var elPrev  = document.getElementById('nav-prev');
+  var elNext  = document.getElementById('nav-next');
+  var elTitle = document.getElementById('nav-title');
+  var elDots  = document.getElementById('nav-dots');
+  var side    = document.getElementById('sidebar');
+
+  /* 목차 만들기 — 장(chapter) 아래에 슬라이드 제목을 단다 */
+  var toc = document.getElementById('toc');
+  CH.forEach(function (name, ci) {
+    var kids = slides.filter(function (s) { return +s.dataset.ch === ci; });
+    if (!kids.length) return;
+    var li = document.createElement('li');
+    var head = document.createElement('div');
+    head.className = 'toc-ch'; head.dataset.ch = ci;
+    head.innerHTML = '<span class="no">' + ci + '</span><span class="nm">' + name +
+                     '</span><span class="cnt">' + kids.length + '장</span>';
+    var sub = document.createElement('ul');
+    sub.className = 'toc-sub'; sub.dataset.ch = ci;
+    kids.forEach(function (s) {
+      var i = slides.indexOf(s);
+      var item = document.createElement('li');
+      item.textContent = s.dataset.t; item.dataset.i = i;
+      item.addEventListener('click', function () { go(i); });
+      sub.appendChild(item);
+    });
+    head.addEventListener('click', function () { go(slides.indexOf(kids[0])); });
+    li.appendChild(head); li.appendChild(sub); toc.appendChild(li);
+  });
+
+  function go(i) {
+    if (i < 0 || i >= slides.length) return;
+    cur = i;
+    slides.forEach(function (s, k) { s.classList.toggle('on', k === i); });
+    var s = slides[i], ci = +s.dataset.ch;
+
+    /* 목차 상태 */
+    [].forEach.call(document.querySelectorAll('.toc-ch'), function (h) {
+      h.classList.toggle('active', +h.dataset.ch === ci);
+    });
+    [].forEach.call(document.querySelectorAll('.toc-sub'), function (u) {
+      u.classList.toggle('open', +u.dataset.ch === ci);
+    });
+    [].forEach.call(document.querySelectorAll('.toc-sub li'), function (b) {
+      b.classList.toggle('on', +b.dataset.i === i);
+    });
+
+    /* 상단·하단 표시 */
+    var pct = (i + 1) / slides.length * 100;
+    if (elProg) elProg.style.width = pct + '%';
+    if (elCount) elCount.textContent = (i + 1) + ' / ' + slides.length;
+    if (elSub) elSub.textContent = CH[ci] + ' · ' + s.dataset.t;
+    if (elTitle) elTitle.textContent = s.dataset.t;
+    if (elPrev) elPrev.disabled = (i === 0);
+    if (elNext) elNext.disabled = (i === slides.length - 1);
+
+    /* 같은 장 안에서의 위치 점 */
+    if (elDots) {
+      var kids = slides.filter(function (x) { return +x.dataset.ch === ci; });
+      elDots.innerHTML = kids.map(function (x) {
+        return '<i class="' + (x === s ? 'on' : '') + '"></i>';
+      }).join('');
+    }
+
+    s.scrollTop = 0;
+    if (side) side.classList.remove('open');
+    if (history.replaceState) history.replaceState(null, '', '#' + (i + 1));
+    document.title = (i + 1) + '/' + slides.length + ' · 중소기업 위기 조기경보 대시보드';
+  }
+
+  document.getElementById('nav-prev').addEventListener('click', function () { go(cur - 1); });
+  document.getElementById('nav-next').addEventListener('click', function () { go(cur + 1); });
+  document.getElementById('side-btn').addEventListener('click', function () {
+    side.classList.toggle('open');
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { go(cur + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(cur - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { go(0); e.preventDefault(); }
+    else if (e.key === 'End') { go(slides.length - 1); e.preventDefault(); }
+  });
+
+  window.addEventListener('hashchange', function () {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (n && n - 1 !== cur) go(n - 1);
+  });
+
+  var start = parseInt(location.hash.slice(1), 10);
+  go(start ? Math.min(Math.max(start - 1, 0), slides.length - 1) : 0);
+})();
+</script>
 </body>
 </html>
