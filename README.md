@@ -74,14 +74,14 @@ scikit-learn 이 필요하다.
 ### 1. API 키
 
 한국은행 ECOS 와 통계청 KOSIS 는 무료로 발급된다.
-`~/.config/sme-dashboard/keys.env` 에 넣고 `chmod 600` 한다.
+프로젝트 폴더에 `keys.env` 파일을 만들어 넣는다. `.gitignore` 에 등록되어 있어 커밋되지 않는다.
 
 ```
 ECOS_API_KEY=...
 KOSIS_API_KEY=...
 ```
 
-동명의 환경변수로 주어도 된다. **키를 저장소 안에 두지 않는다.**
+환경변수로 주어도 되고, 여러 프로젝트가 키를 공유한다면 `~/.config/sme-dashboard/keys.env` 에 두어도 된다. **키를 저장소 안에 두지 않는다.**
 공공데이터포털 파일은 키 없이 받으므로 별도 발급이 필요 없다.
 
 ### 2. 수집·분석

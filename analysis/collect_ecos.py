@@ -3,7 +3,7 @@
 실행:  python3 analysis/collect_ecos.py
 산출:  analysis/ecos_result.json  (대시보드가 읽는 값)
 
-API 키는 저장소에 두지 않는다. ~/.config/sme-dashboard/keys.env 의
+API 키는 저장소에 올리지 않는다. 프로젝트 폴더의 keys.env 또는
 ECOS_API_KEY / KOSIS_API_KEY 또는 동명의 환경변수에서 읽는다. 이 파일은 공개
 저장소에 커밋되므로 키가 들어가면 그대로 노출된다.
 
@@ -81,11 +81,15 @@ def read_key(name="ECOS_API_KEY", required=True):
     k = os.environ.get(name)
     if k:
         return k.strip()
-    for cand in ("~/.config/sme-dashboard/keys.env",
-                 "~/.config/hmson/keys.env"):             # 예전 위치도 계속 읽는다
-        p = pathlib.Path(os.path.expanduser(cand))
-        if p.exists():
-            break
+    # 찾는 순서 — 맥·윈도우에서 똑같이 동작하도록 프로젝트 폴더를 먼저 본다.
+    #   1) 환경변수
+    #   2) 프로젝트 폴더의 keys.env   ← 안내문이 권하는 방법
+    #   3) 홈 폴더의 설정 디렉터리     ← 여러 프로젝트가 키를 공유할 때
+    here = pathlib.Path(__file__).resolve().parent
+    cands = [here / "keys.env", here.parent / "keys.env",
+             pathlib.Path(os.path.expanduser("~/.config/sme-dashboard/keys.env")),
+             pathlib.Path(os.path.expanduser("~/.config/hmson/keys.env"))]
+    p = next((c for c in cands if c.exists()), cands[0])
     if p.exists():
         for line in p.read_text(encoding="utf-8").splitlines():
             line = line.strip()
@@ -98,7 +102,7 @@ def read_key(name="ECOS_API_KEY", required=True):
         return None
     sys.exit(
         f"{name} 을 찾지 못했습니다.\n"
-        f"  ~/.config/sme-dashboard/keys.env 에 {name}=... 를 넣거나\n"
+        f"  프로젝트 폴더에 keys.env 파일을 만들고 {name}=... 를 넣거나\n"
         "  환경변수로 지정하세요. 키를 이 파일에 직접 적지 마세요."
     )
 

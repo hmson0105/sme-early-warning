@@ -61,11 +61,15 @@ def read_key(name):
     k = os.environ.get(name)
     if k:
         return k.strip()
-    for cand in ("~/.config/sme-dashboard/keys.env",
-                 "~/.config/hmson/keys.env"):             # 예전 위치도 계속 읽는다
-        p = pathlib.Path(os.path.expanduser(cand))
-        if p.exists():
-            break
+    # 찾는 순서 — 맥·윈도우에서 똑같이 동작하도록 프로젝트 폴더를 먼저 본다.
+    #   1) 환경변수
+    #   2) 프로젝트 폴더의 keys.env   ← 안내문이 권하는 방법
+    #   3) 홈 폴더의 설정 디렉터리     ← 여러 프로젝트가 키를 공유할 때
+    here = pathlib.Path(__file__).resolve().parent
+    cands = [here / "keys.env", here.parent / "keys.env",
+             pathlib.Path(os.path.expanduser("~/.config/sme-dashboard/keys.env")),
+             pathlib.Path(os.path.expanduser("~/.config/hmson/keys.env"))]
+    p = next((c for c in cands if c.exists()), cands[0])
     if p.exists():
         for line in p.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("#") or "=" not in line:
@@ -73,7 +77,7 @@ def read_key(name):
             n, v = line.split("=", 1)
             if n.strip() == name and v.strip():
                 return v.strip()
-    sys.exit(f"{name} 을 찾지 못했습니다. ~/.config/sme-dashboard/keys.env 를 확인하세요.")
+    sys.exit(f"{name} 을 찾지 못했습니다. 프로젝트 폴더의 keys.env 를 확인하세요.")
 
 
 def get(url, tries=3):

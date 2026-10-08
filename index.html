@@ -1209,59 +1209,93 @@ body.deck-mode {
 <!-- ch9 따라 하기 -->
 <section class="slide" data-ch="9" data-t="준비물">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
-    <h2>준비물 — 10분이면 끝납니다</h2>
+    <div class="s-kicker">따라 하기 · 1단계</div>
+    <h2>준비물 네 가지</h2>
     <ul class="points">
       <li><span class="tag">1</span><b>한국은행 ECOS 인증키</b> · 무료 · 즉시 발급
         <em><code>ecos.bok.or.kr</code> 접속 → 상단 <b>오픈API</b> → <b>인증키 신청</b><br>
-            이메일과 사용 목적만 적으면 됩니다. 신청 즉시 화면에 키가 나옵니다</em></li>
+            이메일과 사용 목적만 적으면 신청 즉시 화면에 키가 나옵니다</em></li>
       <li><span class="tag">2</span><b>통계청 KOSIS 인증키</b> · 무료 · 즉시 발급
         <em><code>kosis.kr</code> 접속 → 하단 <b>OpenAPI</b> → <b>활용신청</b><br>
             회원가입 후 신청하면 바로 발급됩니다</em></li>
-      <li><span class="tag">3</span><b>AI 코딩 도구</b>
+      <li><span class="tag">3</span><b>파이썬</b>
+        <em><code>python.org</code> → Downloads 에서 설치<br>
+            <b>윈도우는 설치 첫 화면의 "Add Python to PATH"를 반드시 체크</b>합니다.
+            체크하지 않으면 명령어를 못 찾습니다<br>
+            macOS·리눅스는 대개 이미 설치되어 있습니다</em></li>
+      <li><span class="tag">4</span><b>AI 코딩 도구</b>
         <em>대화하듯 코드를 만들어 주는 도구면 무엇이든 됩니다.
             이 과제는 Claude Code를 사용했습니다</em></li>
-      <li><span class="tag">4</span><b>파이썬</b>
-        <em>맥에는 이미 깔려 있습니다. 터미널에 <code>python3 --version</code>을 쳐서
-            숫자가 나오면 준비 완료<br>
-            윈도우는 <code>python.org</code>에서 내려받아 설치하면 됩니다</em></li>
+    </ul>
+    <div class="readme"><span class="k">설치 확인</span>
+      <p>명령 창을 열고 아래를 입력했을 때 숫자가 나오면 준비 완료입니다<br>
+         <b>윈도우</b> — 시작 메뉴에서 <code>cmd</code> 실행 후 <code>python --version</code><br>
+         <b>macOS·리눅스</b> — 터미널 실행 후 <code>python3 --version</code></p>
+      <span class="plain">※ 이후 모든 설명에서 <code>python</code>(윈도우)과 <code>python3</code>(macOS·리눅스) 중
+        본인 환경에 맞는 쪽을 쓰면 됩니다. 공공데이터포털 파일은 키 없이 받으므로 신청이 필요 없습니다</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="9" data-t="깃허브 준비">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기 · 2단계</div>
+    <h2>깃허브 계정과 저장소 만들기</h2>
+    <p class="lede">만든 화면을 링크로 공유하려면 깃허브가 필요합니다.
+       <b>무료</b>이고 서버를 따로 빌리지 않아도 됩니다</p>
+    <ul class="points">
+      <li><span class="tag">1</span><b>계정 만들기</b>
+        <em><code>github.com</code> → <b>Sign up</b> → 이메일·비밀번호·사용자명 입력<br>
+            사용자명이 주소에 그대로 들어갑니다. <b>공개해도 되는 이름</b>으로 정하세요<br>
+            예 — 사용자명이 <code>abc</code>면 주소는 <code>abc.github.io/…</code> 가 됩니다</em></li>
+      <li><span class="tag">2</span><b>빈 저장소 만들기</b>
+        <em><code>github.com/new</code> 접속 → Repository name 입력 → <b>Public</b> 선택<br>
+            <b>아래 세 개는 체크하지 않습니다</b> — Add a README / Add .gitignore / Choose a license<br>
+            하나라도 체크하면 나중에 올릴 때 충돌이 납니다</em></li>
+      <li><span class="tag">3</span><b>Git 설치 확인</b>
+        <em>명령 창에 <code>git --version</code> 을 입력합니다<br>
+            숫자가 안 나오면 <code>git-scm.com</code> 에서 설치합니다.
+            설치 시 기본 설정 그대로 두면 됩니다</em></li>
     </ul>
     <div class="readme"><span class="k">참고</span>
-      <p>공공데이터포털 파일은 <b>키 없이</b> 내려받습니다. 별도 신청이 필요 없습니다.<br>
-         뉴스 분석까지 하려면 <code>pip3 install scikit-learn</code> 한 줄만 추가로 실행합니다</p>
+      <p>저장소를 만든 직후 화면에 나오는 안내 명령은 <b>지금 실행하지 않습니다.</b>
+         올릴 파일을 먼저 만든 뒤 6단계에서 한 번에 처리합니다</p>
     </div>
   </div>
 </section>
 
 <section class="slide" data-ch="9" data-t="키 보관하기">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 3단계</div>
     <h2>발급받은 키는 코드 밖에 둡니다</h2>
-    <p class="lede">키를 코드 안에 적으면 파일을 공유하는 순간 함께 노출됩니다.
+    <p class="lede">키를 코드에 적으면 파일을 공유하는 순간 함께 노출됩니다.
        따로 보관하고 코드가 읽어 가게 합니다</p>
     <ul class="points">
-      <li><span class="tag">1</span><b>보관할 파일 만들기</b>
-        <em>내 컴퓨터의 <code>~/.config/sme-dashboard/keys.env</code> 위치에 파일을 만들고
-            아래 두 줄을 적습니다<br>
+      <li><span class="tag">1</span><b>프로젝트 폴더에 파일 만들기</b>
+        <em>파일 이름은 <code>keys.env</code>, 위치는 프로젝트 폴더 바로 아래입니다.
+            메모장·텍스트편집기 어느 것으로 만들어도 됩니다<br>
             <code>ECOS_API_KEY=발급받은키</code><br>
             <code>KOSIS_API_KEY=발급받은키</code></em></li>
-      <li><span class="tag">2</span><b>남이 못 읽게 막기</b>
-        <em>터미널에 <code>chmod 600 ~/.config/sme-dashboard/keys.env</code> 를 입력합니다.
-            본인만 읽을 수 있게 됩니다</em></li>
-      <li><span class="tag">3</span><b>깃허브에 안 올라가게 막기</b>
-        <em>프로젝트 폴더의 <code>.gitignore</code> 파일에 <code>keys.env</code> 한 줄을 추가합니다.
-            실수로 올리는 일을 막아 줍니다</em></li>
+      <li><span class="tag">2</span><b>깃허브에 안 올라가게 막기</b>
+        <em>같은 폴더의 <code>.gitignore</code> 파일에 <code>keys.env</code> 한 줄을 추가합니다<br>
+            파일이 없으면 새로 만들면 됩니다</em></li>
+      <li><span class="tag">3</span><b>올리기 전 눈으로 확인</b>
+        <em>명령 창에 <code>git status</code> 를 입력했을 때
+            <b>목록에 <code>keys.env</code> 가 없어야</b> 합니다<br>
+            보인다면 2번이 적용되지 않은 것이니 다시 확인합니다</em></li>
     </ul>
     <div class="readme"><span class="k">왜 이렇게 하나</span>
       <p>공개 저장소는 한 번 올라간 내용이 기록에 남습니다.
          <b>지워도 과거 기록에서 볼 수 있습니다.</b> 처음부터 올리지 않는 것이 유일한 방법입니다</p>
+      <span class="plain">※ 여러 프로젝트에서 같은 키를 쓴다면 홈 폴더에 두어도 됩니다.
+        수집 코드가 프로젝트 폴더 → 홈 폴더 순서로 찾습니다. 환경변수로 지정해도 동작합니다</span>
     </div>
   </div>
 </section>
 
 <section class="slide" data-ch="9" data-t="무엇을 받아오나">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 4단계</div>
     <h2>어디서 무엇을 받아오는지</h2>
     <p class="lede">아래 표의 코드를 그대로 쓰면 같은 자료를 받을 수 있습니다</p>
     <div class="chart-box full">
@@ -1305,77 +1339,76 @@ body.deck-mode {
 
 <section class="slide" data-ch="9" data-t="실행 순서">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 5단계</div>
     <h2>순서대로 7번 실행하면 됩니다</h2>
     <p class="lede"><b>순서가 중요합니다.</b> 뒤 단계가 앞 단계의 결과 파일을 읽습니다.
-       터미널에서 한 줄씩 차례로 입력하세요</p>
+       명령 창에서 한 줄씩 차례로 입력하세요</p>
     <div class="chart-box full">
       <div class="tbl-wrap"><table><thead><tr>
         <th style="text-align:center">순서</th><th>입력할 명령</th><th>하는 일</th><th>만들어지는 파일</th>
       </tr></thead><tbody>
-        <tr><td style="text-align:center">1</td><td class="left"><code>python3 analysis/collect_ecos.py</code></td>
+        <tr><td style="text-align:center">1</td><td class="left"><code>analysis/collect_ecos.py</code></td>
           <td class="left">한국은행·통계청에서 지표 24종 받아오기</td><td class="left">ecos_result.json</td></tr>
-        <tr><td style="text-align:center">2</td><td class="left"><code>python3 analysis/build_index.py</code></td>
+        <tr><td style="text-align:center">2</td><td class="left"><code>analysis/build_index.py</code></td>
           <td class="left">시차 상관 계산, 종합 경보지수 산출</td><td class="left">data/ecos.json</td></tr>
-        <tr><td style="text-align:center">3</td><td class="left"><code>python3 analysis/collect_region.py</code></td>
+        <tr><td style="text-align:center">3</td><td class="left"><code>analysis/collect_region.py</code></td>
           <td class="left">시도별 산업 구성·연체율·어음부도율</td><td class="left">data/region.json</td></tr>
-        <tr><td style="text-align:center">4</td><td class="left"><code>python3 analysis/collect_jobmove.py</code></td>
+        <tr><td style="text-align:center">4</td><td class="left"><code>analysis/collect_jobmove.py</code></td>
           <td class="left">시도별 자발적·비자발적 이직</td><td class="left">data/jobmove.json</td></tr>
-        <tr><td style="text-align:center">5</td><td class="left"><code>python3 analysis/build_map.py</code></td>
+        <tr><td style="text-align:center">5</td><td class="left"><code>analysis/build_map.py</code></td>
           <td class="left">지도 경계 줄이기 (7.5MB → 42KB)</td><td class="left">data/kmap.json</td></tr>
-        <tr><td style="text-align:center">6</td><td class="left"><code>python3 analysis/build_nacham.py</code></td>
+        <tr><td style="text-align:center">6</td><td class="left"><code>analysis/build_nacham.py</code></td>
           <td class="left">공제 해지 사유·지역 위험·해지 시기</td><td class="left">data/nacham.json</td></tr>
-        <tr><td style="text-align:center">7</td><td class="left"><code>python3 analysis/crawl_topic.py</code></td>
+        <tr><td style="text-align:center">7</td><td class="left"><code>analysis/crawl_topic.py</code></td>
           <td class="left">뉴스 수집·주제 분류·토픽지수</td><td class="left">data/topic.json</td></tr>
       </tbody></table></div>
     </div>
-    <div class="readme"><span class="k">화면 띄우기</span>
-      <p>프로젝트 폴더에서 <code>python3 -m http.server</code> 를 입력하고
-         브라우저에서 <code>localhost:8000</code> 으로 들어갑니다<br>
-         <b>빌드나 설치 과정이 없습니다.</b> 깃허브에 올리면 그대로 웹사이트가 됩니다</p>
+    <div class="readme"><span class="k">입력 방법</span>
+      <p>표의 파일 이름 앞에 본인 환경의 파이썬 명령을 붙입니다<br>
+         <b>윈도우</b> — <code>python analysis\\collect_ecos.py</code> (역슬래시)<br>
+         <b>macOS·리눅스</b> — <code>python3 analysis/collect_ecos.py</code> (슬래시)</p>
+      <p>7번 뉴스 분석만 사전 설치가 필요합니다 —
+         <code>pip install scikit-learn</code> (윈도우) /
+         <code>pip3 install scikit-learn</code> (macOS·리눅스)</p>
     </div>
   </div>
 </section>
 
-
-<section class="slide" data-ch="9" data-t="깃허브에 올리기">
+<section class="slide" data-ch="9" data-t="화면 공개하기">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
-    <h2>만든 화면을 링크로 공유하기</h2>
-    <p class="lede">깃허브에 올리면 <b>무료로</b> 웹사이트가 됩니다. 서버를 빌릴 필요가 없습니다</p>
-    <ul class="points compact">
-      <li><span class="tag">1</span><b>계정 만들기</b>
-        <em><code>github.com</code> → <b>Sign up</b> → 이메일·비밀번호·사용자명 입력<br>
-            사용자명이 주소에 그대로 들어가므로 <b>공개해도 되는 이름</b>으로 정합니다</em></li>
-      <li><span class="tag">2</span><b>저장소 만들기</b>
-        <em><code>github.com/new</code> 접속 → 이름 입력 → <b>Public</b> 선택<br>
-            <b>아래 3개는 체크하지 않습니다</b> — Add a README / Add .gitignore / Choose a license.
-            체크하면 올릴 때 충돌이 납니다</em></li>
-      <li><span class="tag">3</span><b>내 폴더를 저장소에 연결</b>
-        <em>프로젝트 폴더에서 터미널을 열고 차례로 입력합니다<br>
-            <code>git init</code> → <code>git add .</code> →
-            <code>git commit -m "첫 등록"</code> → <code>git branch -M main</code><br>
-            <code>git remote add origin https://github.com/계정명/저장소명.git</code> →
+    <div class="s-kicker">따라 하기 · 6단계</div>
+    <h2>만든 화면을 링크로 공개하기</h2>
+    <p class="lede">2단계에서 만든 빈 저장소에 지금 파일을 올립니다</p>
+    <ul class="points">
+      <li><span class="tag">1</span><b>내 화면 먼저 확인</b>
+        <em>프로젝트 폴더에서 <code>python -m http.server</code>
+            (macOS·리눅스는 <code>python3</code>) 입력<br>
+            브라우저에서 <code>localhost:8000</code> 으로 들어가 화면이 뜨는지 봅니다<br>
+            멈출 때는 명령 창에서 <code>Ctrl + C</code></em></li>
+      <li><span class="tag">2</span><b>저장소에 올리기</b>
+        <em>프로젝트 폴더에서 아래를 차례로 입력합니다. 운영체제와 무관하게 같습니다<br>
+            <code>git init</code> · <code>git add .</code> ·
+            <code>git commit -m "첫 등록"</code> · <code>git branch -M main</code><br>
+            <code>git remote add origin https://github.com/계정명/저장소명.git</code> ·
             <code>git push -u origin main</code></em></li>
-      <li><span class="tag">4</span><b>웹사이트 기능 켜기</b>
+      <li><span class="tag">3</span><b>웹사이트 기능 켜기</b>
         <em>저장소 화면에서 <b>Settings</b> → 왼쪽 <b>Pages</b><br>
             Source를 <b>Deploy from a branch</b>, Branch를 <b>main</b> / <b>/(root)</b> 로 두고 <b>Save</b></em></li>
-      <li><span class="tag">5</span><b>주소 확인</b>
+      <li><span class="tag">4</span><b>주소 확인</b>
         <em>1~2분 뒤 <code>https://계정명.github.io/저장소명/</code> 으로 접속됩니다<br>
-            이후에는 <code>git add . → git commit → git push</code> 세 줄이면 화면이 갱신됩니다</em></li>
+            이후 수정할 때는 <code>git add .</code> · <code>git commit -m "수정"</code> ·
+            <code>git push</code> 세 줄이면 화면이 갱신됩니다</em></li>
     </ul>
     <div class="readme"><span class="k">올리기 전 확인</span>
-      <p><b>키 파일이 폴더 안에 있으면 안 됩니다.</b> 공개 저장소는 한 번 올라간 내용이
-         기록에 남아 지워도 과거 기록에서 볼 수 있습니다<br>
-         <code>.gitignore</code> 에 <code>keys.env</code> 와 <code>*.csv</code> 를 적어 두고,
-         <code>git status</code> 로 올라갈 파일 목록을 눈으로 확인한 뒤 올립니다</p>
+      <p><code>git status</code> 목록에 <b><code>keys.env</code> 가 없어야</b> 합니다.
+         보이면 올리지 말고 3단계의 <code>.gitignore</code> 설정을 먼저 확인하세요</p>
     </div>
   </div>
 </section>
 
 <section class="slide" data-ch="9" data-t="계산 방법">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 참고</div>
     <h2>숫자를 어떻게 만들었는지</h2>
     <ul class="points">
       <li><span class="tag">1</span><b>1년 전과 비교합니다</b>
@@ -1403,10 +1436,20 @@ body.deck-mode {
 
 <section class="slide" data-ch="9" data-t="막힐 때">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 참고</div>
     <h2>이런 오류가 나면</h2>
-    <p class="lede">실제로 만나게 되는 다섯 가지입니다. 해결 방법이 코드에 이미 들어 있습니다</p>
+    <p class="lede">실제로 만나게 되는 여섯 가지입니다. 아래 셋은 해결 방법이 코드에 이미 들어 있습니다</p>
     <ul class="points compact">
+      <li><b>명령을 못 찾는다고 나올 때</b>
+        <em><b>증상</b> — <code>'python'은(는) 내부 또는 외부 명령이 아닙니다</code> 또는
+            <code>command not found</code><br>
+            <b>해결</b> — 윈도우는 파이썬을 다시 설치하며 <b>"Add Python to PATH"</b>를 체크.
+            macOS·리눅스는 <code>python</code> 대신 <code>python3</code> 로 입력</em></li>
+      <li><b>키를 못 찾는다고 나올 때</b>
+        <em><b>증상</b> — <code>ECOS_API_KEY 을 찾지 못했습니다</code><br>
+            <b>해결</b> — <code>keys.env</code> 가 <b>프로젝트 폴더 바로 아래</b>에 있는지,
+            파일 이름이 <code>keys.env.txt</code> 로 저장되지 않았는지 확인
+            (윈도우 메모장이 확장자를 붙이는 경우가 있습니다)</em></li>
       <li><b>같은 달이 여러 번 나올 때</b>
         <em><b>증상</b> — 102개월을 요청했는데 306줄이 돌아옴<br>
             <b>원인</b> — 한국은행 표가 2차원이라 은행 종류별로 쪼개져 나옴<br>
@@ -1415,9 +1458,6 @@ body.deck-mode {
         <em><b>증상</b> — 요청이 반려되고 자료가 비어서 옴<br>
             <b>원인</b> — 한 번에 받을 수 있는 칸이 4만 개로 제한됨<br>
             <b>해결</b> — 항목이 적은 표로 바꾸거나 기간을 나눠서 요청</em></li>
-      <li><b>찾는 지표가 전국 표에 없을 때</b>
-        <em><b>증상</b> — 중소기업 전용 연체율이 전국 통계에 없음<br>
-            <b>해결</b> — 지역별 표(141Y005)에는 있음. 어느 기준인지 화면에 꼭 밝혀 적기</em></li>
       <li><b>지역 수가 안 맞을 때</b>
         <em><b>증상</b> — 17개 시도인데 18개가 나옴<br>
             <b>원인</b> — '전남광주통합특별시' 같은 <b>합산 항목</b>이 섞여 광주·전남이 두 번 계산됨<br>
@@ -1431,7 +1471,7 @@ body.deck-mode {
 
 <section class="slide" data-ch="9" data-t="바로 응용하기">
   <div class="slide-in">
-    <div class="s-kicker">따라 하기</div>
+    <div class="s-kicker">따라 하기 · 참고</div>
     <h2>다른 업무에도 그대로 씁니다</h2>
     <p class="lede">바꿀 것은 <b>표 코드와 검색어뿐</b>입니다. 계산하고 화면 그리는 부분은 그대로 둡니다</p>
     <ul class="points">
@@ -1445,13 +1485,13 @@ body.deck-mode {
         <em><code>crawl_topic.py</code>의 검색어 10개만 바꾸면
             그 주제의 담론 구성과 토픽지수가 나옵니다</em></li>
       <li><span class="tag">04</span><b>자료만 갱신하기</b>
-        <em>매달 스크립트를 다시 돌리면 화면이 최신으로 바뀝니다.
+        <em>매달 5단계를 다시 실행하면 화면이 최신으로 바뀝니다.
             <b>화면 코드는 손대지 않아도 됩니다</b> — 숫자를 코드에 적어 두지 않고
             파일에서 읽어 오기 때문입니다</em></li>
     </ul>
-    <div class="readme"><span class="k">소요 시간</span>
-      <p>키 발급 10분 · 코드 내려받기 1분 · 전체 실행 수 분.
-         <b>처음 시작해서 화면이 뜰 때까지 30분 안쪽</b>입니다</p>
+    <div class="readme"><span class="k">전체 소요 시간</span>
+      <p>키 발급 10분 · 깃허브 가입과 저장소 생성 5분 · 코드 내려받기 1분 · 전체 실행 수 분<br>
+         <b>처음 시작해서 화면이 공개될 때까지 30분 안쪽</b>입니다</p>
     </div>
   </div>
 </section>
