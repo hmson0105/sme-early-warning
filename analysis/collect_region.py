@@ -125,6 +125,47 @@ def ecos_region(key, stat, item1, region_code, cycle="M"):
     return obs
 
 
+def mean_recent(series, months=6):
+    """최근 n개월 평균. 단월 값을 쓰면 한 달 급등으로 순위가 뒤집힌다.
+    (광주 어음부도율 2026.07 0.12% → 08 2.59%)"""
+    vals = [o["v"] for o in series[-months:] if o.get("v") is not None]
+    return sum(vals) / len(vals) if vals else None
+
+
+def add_risk(rows):
+    """시도별 신용위험 종합을 계산해 각 행에 risk 로 넣는다.
+
+    연체율과 어음부도율은 단위가 달라 그대로 더할 수 없다. 각각을
+    시도 간 z-score 로 바꾼 뒤 평균한다. 둘 다 값이 클수록 위험하므로
+    부호를 뒤집을 필요는 없다.
+
+    지도 색칠이 이 값을 읽는다. 이 함수가 빠지면 지도가 무채색이 된다.
+    """
+    import math
+
+    def z(vals):
+        got = {k: v for k, v in vals.items() if v is not None}
+        if len(got) < 2:
+            return {}
+        mu = sum(got.values()) / len(got)
+        sd = math.sqrt(sum((v - mu) ** 2 for v in got.values()) / len(got))
+        return {k: 0.0 for k in got} if sd == 0 else {k: (v - mu) / sd for k, v in got.items()}
+
+    dl = {r["name"]: mean_recent(r.get("delinq") or []) for r in rows}
+    dh = {r["name"]: mean_recent(r.get("dishonor") or []) for r in rows}
+    zd, zh = z(dl), z(dh)
+
+    n = 0
+    for r in rows:
+        parts = [t[r["name"]] for t in (zd, zh) if r["name"] in t]
+        if parts:
+            r["risk"] = round(sum(parts) / len(parts), 3)
+            n += 1
+        else:
+            r["risk"] = None
+    return n
+
+
 def main():
     kk, ek = read_key("KOSIS_API_KEY"), read_key("ECOS_API_KEY")
 
@@ -166,6 +207,14 @@ def main():
               f"연체율 {d if d is not None else '-':>5}  "
               f"부도율 {row['dishonor'][-1]['v'] if row['dishonor'] else '-':>5}")
         out["regions"].append(row)
+
+    n_risk = add_risk(out["regions"])
+    out["risk_method"] = ("최근 6개월 평균 연체율·어음부도율을 시도 간 z-score 로 "
+                          "표준화해 평균. 둘 다 값이 클수록 위험.")
+    print(f"\n신용위험 종합 산출: {n_risk}/{len(out['regions'])}개 시도")
+    top = sorted((r for r in out["regions"] if r.get("risk") is not None),
+                 key=lambda r: -r["risk"])[:3]
+    print("  상위: " + ", ".join(f"{r['name']}({r['risk']:+.2f})" for r in top))
 
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
