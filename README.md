@@ -74,7 +74,7 @@ scikit-learn 이 필요하다.
 ### 1. API 키
 
 한국은행 ECOS 와 통계청 KOSIS 는 무료로 발급된다.
-`~/.config/hmson/keys.env` 에 넣고 `chmod 600` 한다.
+`~/.config/sme-dashboard/keys.env` 에 넣고 `chmod 600` 한다.
 
 ```
 ECOS_API_KEY=...

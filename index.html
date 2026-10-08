@@ -1241,12 +1241,12 @@ body.deck-mode {
        따로 보관하고 코드가 읽어 가게 합니다</p>
     <ul class="points">
       <li><span class="tag">1</span><b>보관할 파일 만들기</b>
-        <em>내 컴퓨터의 <code>~/.config/hmson/keys.env</code> 위치에 파일을 만들고
+        <em>내 컴퓨터의 <code>~/.config/sme-dashboard/keys.env</code> 위치에 파일을 만들고
             아래 두 줄을 적습니다<br>
             <code>ECOS_API_KEY=발급받은키</code><br>
             <code>KOSIS_API_KEY=발급받은키</code></em></li>
       <li><span class="tag">2</span><b>남이 못 읽게 막기</b>
-        <em>터미널에 <code>chmod 600 ~/.config/hmson/keys.env</code> 를 입력합니다.
+        <em>터미널에 <code>chmod 600 ~/.config/sme-dashboard/keys.env</code> 를 입력합니다.
             본인만 읽을 수 있게 됩니다</em></li>
       <li><span class="tag">3</span><b>깃허브에 안 올라가게 막기</b>
         <em>프로젝트 폴더의 <code>.gitignore</code> 파일에 <code>keys.env</code> 한 줄을 추가합니다.
@@ -1333,6 +1333,42 @@ body.deck-mode {
       <p>프로젝트 폴더에서 <code>python3 -m http.server</code> 를 입력하고
          브라우저에서 <code>localhost:8000</code> 으로 들어갑니다<br>
          <b>빌드나 설치 과정이 없습니다.</b> 깃허브에 올리면 그대로 웹사이트가 됩니다</p>
+    </div>
+  </div>
+</section>
+
+
+<section class="slide" data-ch="9" data-t="깃허브에 올리기">
+  <div class="slide-in">
+    <div class="s-kicker">따라 하기</div>
+    <h2>만든 화면을 링크로 공유하기</h2>
+    <p class="lede">깃허브에 올리면 <b>무료로</b> 웹사이트가 됩니다. 서버를 빌릴 필요가 없습니다</p>
+    <ul class="points compact">
+      <li><span class="tag">1</span><b>계정 만들기</b>
+        <em><code>github.com</code> → <b>Sign up</b> → 이메일·비밀번호·사용자명 입력<br>
+            사용자명이 주소에 그대로 들어가므로 <b>공개해도 되는 이름</b>으로 정합니다</em></li>
+      <li><span class="tag">2</span><b>저장소 만들기</b>
+        <em><code>github.com/new</code> 접속 → 이름 입력 → <b>Public</b> 선택<br>
+            <b>아래 3개는 체크하지 않습니다</b> — Add a README / Add .gitignore / Choose a license.
+            체크하면 올릴 때 충돌이 납니다</em></li>
+      <li><span class="tag">3</span><b>내 폴더를 저장소에 연결</b>
+        <em>프로젝트 폴더에서 터미널을 열고 차례로 입력합니다<br>
+            <code>git init</code> → <code>git add .</code> →
+            <code>git commit -m "첫 등록"</code> → <code>git branch -M main</code><br>
+            <code>git remote add origin https://github.com/계정명/저장소명.git</code> →
+            <code>git push -u origin main</code></em></li>
+      <li><span class="tag">4</span><b>웹사이트 기능 켜기</b>
+        <em>저장소 화면에서 <b>Settings</b> → 왼쪽 <b>Pages</b><br>
+            Source를 <b>Deploy from a branch</b>, Branch를 <b>main</b> / <b>/(root)</b> 로 두고 <b>Save</b></em></li>
+      <li><span class="tag">5</span><b>주소 확인</b>
+        <em>1~2분 뒤 <code>https://계정명.github.io/저장소명/</code> 으로 접속됩니다<br>
+            이후에는 <code>git add . → git commit → git push</code> 세 줄이면 화면이 갱신됩니다</em></li>
+    </ul>
+    <div class="readme"><span class="k">올리기 전 확인</span>
+      <p><b>키 파일이 폴더 안에 있으면 안 됩니다.</b> 공개 저장소는 한 번 올라간 내용이
+         기록에 남아 지워도 과거 기록에서 볼 수 있습니다<br>
+         <code>.gitignore</code> 에 <code>keys.env</code> 와 <code>*.csv</code> 를 적어 두고,
+         <code>git status</code> 로 올라갈 파일 목록을 눈으로 확인한 뒤 올립니다</p>
     </div>
   </div>
 </section>

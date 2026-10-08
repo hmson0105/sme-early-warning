@@ -45,7 +45,11 @@ def read_key(name):
     k = os.environ.get(name)
     if k:
         return k.strip()
-    p = pathlib.Path(os.path.expanduser("~/.config/hmson/keys.env"))
+    for cand in ("~/.config/sme-dashboard/keys.env",
+                 "~/.config/hmson/keys.env"):             # 예전 위치도 계속 읽는다
+        p = pathlib.Path(os.path.expanduser(cand))
+        if p.exists():
+            break
     if p.exists():
         for line in p.read_text(encoding="utf-8").splitlines():
             if line.strip().startswith("#") or "=" not in line:
@@ -53,7 +57,7 @@ def read_key(name):
             n, v = line.split("=", 1)
             if n.strip() == name and v.strip():
                 return v.strip()
-    sys.exit(f"{name} 을 찾지 못했습니다. ~/.config/hmson/keys.env 를 확인하세요.")
+    sys.exit(f"{name} 을 찾지 못했습니다. ~/.config/sme-dashboard/keys.env 를 확인하세요.")
 
 
 def get(url, tries=3):
