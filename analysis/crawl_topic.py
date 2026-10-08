@@ -122,6 +122,43 @@ for m, k in zip(mlist, assign):
         tm[m][int(k)] += 1
 month_topic = sorted(tm.items())
 
+# ---------- 토픽지수 (TI) ----------
+# 고광이·오승원·백장선(2020), 한국데이터정보과학회지 31(4)
+#   월별 토픽지수 = 해당 월 토픽에 할당된 단어 수 / 해당 월 전체 기사 수
+#
+# 기사 수만 세면 수집 매체가 늘거나 크롤링 양이 달라졌을 때 그것이
+# 그대로 '관심 증가'로 보인다. 분모에 기사 수를 두면 매체 수 변화가
+# 상쇄되고, 기사 한 건당 그 주제에 쓰인 단어의 양 — 곧 상대적
+# 관심도 — 만 남는다.
+#
+# 한 기사의 단어를 토픽별로 쪼갤 때는 LDA 가 추정한 문서-토픽 비중
+# W[d] 를 그 기사의 전체 단어 수에 곱한다.
+doc_len = X.sum(axis=1).A1 if hasattr(X.sum(axis=1), 'A1') else X.sum(axis=1).ravel()
+ti_words = collections.defaultdict(lambda: [0.0] * N_TOPICS)
+ti_docs = collections.Counter()
+for d, m in enumerate(mlist):
+    if not m:
+        continue
+    ti_docs[m] += 1
+    for k in range(N_TOPICS):
+        ti_words[m][k] += float(doc_len[d]) * float(W[d][k])
+
+topic_index = []
+for m in sorted(ti_words):
+    n_doc = ti_docs[m]
+    if n_doc < 3:          # 표본이 너무 적은 달은 지수가 튄다
+        continue
+    topic_index.append({
+        't': m,
+        'n_docs': n_doc,
+        'ti': [round(ti_words[m][k] / n_doc, 2) for k in range(N_TOPICS)],
+    })
+
+print(f"\n[토픽지수] {len(topic_index)}개월 산출 (기사 3건 이상인 달만)")
+for r in topic_index[-6:]:
+    print(f"  {r['t']}  기사 {r['n_docs']:>3}건  TI " +
+          ' '.join(f'{v:>6.2f}' for v in r['ti']))
+
 reps = {}
 for k in range(N_TOPICS):
     cand = [i for i in range(len(articles)) if assign[i] == k]
@@ -136,6 +173,11 @@ json.dump({
     'topics': topics,
     'months': sorted(months.items()),
     'month_topic': month_topic,
+    'topic_index': topic_index,
+    'ti_note': ('월별 토픽지수 = 해당 월 토픽에 할당된 단어 수 / 해당 월 전체 기사 수. '
+                '고광이·오승원·백장선(2020) 한국데이터정보과학회지 31(4) 579-594 의 '
+                '정의를 따른다. 기사 수 대신 기사당 단어량으로 보아 수집량 변화의 '
+                '영향을 제거한다.'),
     'reps': reps,
     'sources': collections.Counter(a['source'] for a in articles).most_common(12),
 }, open('topic_result.json', 'w'), ensure_ascii=False, indent=1)

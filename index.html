@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>중소기업 위기 대시보드</title>
-<meta name="description" content="공개 API로 수집한 24종 지표와 뉴스 762건으로 중소기업 부실의 선행 신호를 탐색하고, 내일채움공제 해지 위험을 시도별로 추정한 대시보드.">
+<meta name="description" content="공개 API로 수집한 24종 지표와 뉴스 기사로 중소기업 부실의 선행 신호를 탐색하고, 내일채움공제 해지 위험을 시도별로 추정한 대시보드.">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -598,14 +598,14 @@ body.deck-mode {
        <b>선행 신호</b>를 탐색하여 경보 단계로 전환<br>
        내일채움공제 해지 위험을 시도별로 추정</p>
     <div class="chips">
-      <span>공개 지표 24종</span><span>뉴스 762건</span><span>시도 17개</span>
+      <span>공개 지표 24종</span><span>뉴스 <span id="n-news">—</span>건</span><span>시도 17개</span>
       <span>한국은행 · 통계청 · 공공데이터포털</span>
     </div>
     <div class="home-nav">
       <div class="home-nav-t">바로가기</div>
       <div class="home-grid">
         <button type="button" data-goto="현재 경보 단계"><b>현재 경보 단계</b><span>종합지수 · 4단계 판정</span></button>
-        <button type="button" data-goto="뉴스 담론 분석"><b>뉴스 담론 분석</b><span>기사 762건 · 토픽모델링</span></button>
+        <button type="button" data-goto="뉴스 담론 분석"><b>뉴스 담론 분석</b><span>기사 토픽모델링</span></button>
         <button type="button" data-goto="선행지표 확인"><b>선행 신호</b><span>시차 상관 · 최대 6개월</span></button>
         <button type="button" data-goto="충격 사건 대조"><b>충격 사건 대조</b><span>관세 · 분쟁 · 회생</span></button>
         <button type="button" data-goto="지역 분석"><b>지역 분석</b><span>시도 17개 · 업종 구성</span></button>
@@ -681,7 +681,7 @@ body.deck-mode {
     <h2>수집 현황 및 출처</h2>
     <div class="bignum">
       <div><b>24</b><span>공개 지표<br>한국은행 · 통계청</span></div>
-      <div><b>762</b><span>뉴스 기사<br>Google News RSS</span></div>
+      <div><b id="n-news2">—</b><span>뉴스 기사<br>Google News RSS</span></div>
       <div><b>17</b><span>시도<br>산업 · 신용 · 고용</span></div>
       <div><b>132,109</b><span>공제 해지 건수<br>공공데이터포털</span></div>
     </div>
@@ -763,7 +763,7 @@ body.deck-mode {
     <ul class="points compact">
       <li><b>수집 경로</b>
         <em>Google News RSS · 검색어 10종(중소기업 위기·부도·자금난·대출 연체,
-            소상공인 폐업, 수출 부진 등) · 중복 제거 후 762건 확보</em></li>
+            소상공인 폐업, 수출 부진 등 <span id="n-query">—</span>종) · 중복 제거 후 <span id="n-news">—</span>건 확보</em></li>
       <li><b>분석 기법 — 토픽모델링(LDA)</b>
         <em>기사에 <b>함께 자주 등장하는 단어들을 묶어</b> 주제를 자동으로 찾아내는 방법.
             사람이 분류 기준을 미리 정하지 않으며, 단어의 동시 출현 패턴만으로
@@ -786,6 +786,39 @@ body.deck-mode {
          경보 산출은 통계 지표로 구성하고 뉴스는 맥락 해석용 보조 자료로 활용</p>
       <span class="plain">※ 주제 분류는 동시 출현 단어에 따른 기계 분류 결과이며 임의 분류가 아님.
         RSS 제목·요약만 분석하였고 기사 본문은 재배포하지 않음</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="3" data-t="토픽지수">
+  <div class="slide-in">
+    <div class="s-kicker">뉴스 분석</div>
+    <h2>기사 수 대신 '기사당 관심도'로 환산</h2>
+    <ul class="points compact">
+      <li><b>왜 기사 수를 그대로 쓰면 안 되는가</b>
+        <em>수집 매체가 늘거나 크롤링 양이 달라지면 기사 수도 함께 늘어남.
+            이를 '위기 심화'로 잘못 읽을 수 있음</em></li>
+      <li><b>적용한 방법 — 토픽지수(TI)</b>
+        <em>월별 토픽지수 = <b>해당 월 토픽에 할당된 단어 수 ÷ 해당 월 전체 기사 수</b><br>
+            분모에 기사 수를 두어 수집량 변화를 상쇄. 기사 한 건당 그 주제에 쓰인
+            단어의 양, 곧 <b>상대적 관심도</b>만 남김</em></li>
+      <li><b>출처</b>
+        <em>고광이·오승원·백장선(2020), 「토픽모델을 이용한 경기변동 토픽지수 개발 및
+            KOSPI200지수에 대한 토픽지수 회귀모형」, 한국데이터정보과학회지 31(4), 579–594</em></li>
+    </ul>
+    <div class="chart-box full">
+      <h3>주제별 토픽지수 추이</h3>
+      <canvas id="chart-topic-index" style="max-height:260px"></canvas>
+      <p class="src">값이 클수록 그 달 기사들이 해당 주제에 더 많은 분량을 할애했음을 의미</p>
+    </div>
+    <div class="readme"><span class="k">해석</span>
+      <p>원 논문은 20년치 39,127건으로 6개 토픽지수를 만들고 KOSPI200에 대한 회귀모형을
+         도출함(설명력 약 73%). 본 과제는 <b>수집 기간이 짧아 회귀모형까지는 적용하지 않음</b></p>
+      <p><b>적용한 부분은 지수화 공식.</b> 산출 구간은 <span id="ti-months">—</span>개월이며,
+         시차 상관 분석에 투입하려면 30개월 이상 안정적 계열이 필요함</p>
+      <span class="plain">※ 확장 방향 — 한국언론진흥재단 빅카인즈는 54개 언론사 약 6천만 건을
+        보유하여 장기 계열 확보가 가능. 원 논문도 이 출처를 사용함. 확보 시 토픽지수를
+        선행지표 풀에 추가하여 연체율과의 시차 상관을 검증할 수 있음</span>
     </div>
   </div>
 </section>
@@ -1017,6 +1050,65 @@ body.deck-mode {
   </div>
 </section>
 
+
+<section class="slide" data-ch="7" data-t="해지 타이밍">
+  <div class="slide-in">
+    <div class="s-kicker">내일채움공제</div>
+    <h2>가입 1년 이내 해지가 10건 중 3건</h2>
+    <ul class="points compact">
+      <li><b>데이터</b>
+        <em>공공데이터포털 15133146 중도해지신청현황 <span id="nt-n">—</span>건.
+            청약번호 앞 7자리(가입 연월)와 지급예정일자의 차이로 유지 기간을 산출</em></li>
+      <li><b>담당자에게 필요한 신호</b>
+        <em>'어디'만이 아니라 <b>'언제'</b>를 알아야 안내 시점을 잡을 수 있음.
+            가입 후 어느 구간이 위험한지, 어느 달에 신청이 몰리는지를 확인</em></li>
+    </ul>
+    <div class="chart-grid">
+      <div class="chart-box"><h3>가입 후 해지까지 기간</h3>
+        <canvas id="chart-nt-tenure" style="max-height:215px"></canvas></div>
+      <div class="chart-box"><h3>월별 해지 신청 집중도</h3>
+        <canvas id="chart-nt-season" style="max-height:215px"></canvas></div>
+    </div>
+    <div class="readme"><span class="k">분석 결과</span>
+      <p><b>가입 1년 이내 해지가 <span id="nt-1y">—</span>.</b>
+         특히 6개월 이내가 <span id="nt-6m">—</span>로 가장 큰 단일 구간.
+         <b>신규 가입자 초기 구간이 최대 이탈 지점</b></p>
+      <p><b>신청은 <span id="nt-peak">—</span>월에 가장 많고 <span id="nt-low">—</span>월에 가장 적음.</b>
+         상반기에 몰리는 구조이므로 <b>연초 선제 안내</b>가 유효</p>
+      <p><b>월 납입 약정액은 핵심인력 <span id="nt-pe">—</span>원 · 기업 <span id="nt-pf">—</span>원(중앙값).</b>
+         1년 시점 해지 시 중단되는 적립은 <b>약 <span id="nt-1yamt">—</span>원</b>으로 추정</p>
+      <span class="plain">※ 지급예정일자는 해지 신청 이후 시점이므로 해지 시기의 근사치.
+        납입금액 두 열은 유지 기간과 무관하게 거의 일정하여 누적액이 아닌 월 납입 약정액으로 판단.
+        '5년 초과' 구간에는 만기 도달분이 섞여 있을 수 있음</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-ch="7" data-t="조치 우선순위">
+  <div class="slide-in">
+    <div class="s-kicker">내일채움공제</div>
+    <h2>지역별 조치 우선순위</h2>
+    <p class="lede">위험 점수만으로는 무엇을 할지 정할 수 없음. <b>어느 신호가 높은지</b>에 따라
+       처방이 달라지므로, 지역별 주된 신호를 판별하여 권고 조치를 함께 제시</p>
+    <div class="chart-box full">
+      <div class="tbl-wrap"><table><thead><tr>
+        <th>순위</th><th>지역</th><th style="text-align:center">위험</th>
+        <th style="text-align:center">주된 신호</th><th>권고 조치</th>
+      </tr></thead><tbody id="nt-action"></tbody></table></div>
+    </div>
+    <div class="readme"><span class="k">판별 기준</span>
+      <p><b>인력 이탈형</b> — 자발적 이직률이 전국 평균을 크게 상회.
+         기업은 정상 운영 중일 가능성이 높으므로 <b>근로자 대상</b> 재직 유인 안내</p>
+      <p><b>기업 부실형</b> — 연체율·어음부도율이 상위.
+         <b>기업 대상</b> 정책자금·경영지원 연계 및 납입 유예 안내</p>
+      <p><b>고용 조정형</b> — 비자발적 이직률이 상위.
+         권고사직이 진행 중일 수 있으므로 <b>조기 접촉</b> 필요</p>
+      <span class="plain">※ 신호 판별은 각 지표의 전국 평균 대비 표준화 점수를 비교한 결과.
+        실제 가입기업 명단과 대조한 것이 아니므로 점검 순서를 정하는 참고치</span>
+    </div>
+  </div>
+</section>
+
 <section class="slide" data-ch="7" data-t="공제사업 활용">
   <div class="slide-in">
     <div class="s-kicker">내일채움공제</div>
@@ -1148,56 +1240,91 @@ const colors = {
   red: '#E74C3C', green: '#27AE60', purple: '#8E44AD', pink: '#E91E63',
   yellow: '#F39C12', gray: '#95A5A6'
 };
-const topicLabels = ['T1 대출연체·폐업', 'T2 협력업체대금·부도', 'T3 명절 자금난', 'T4 정책 긴급지원', 'T5 수출부진·고금리'];
+/* ── 뉴스 담론 ────────────────────────────────────────────────
+   예전에는 토픽 결과를 코드에 적어 두었다. 크롤링을 다시 돌려도
+   화면 숫자가 그대로 남아 실제와 어긋났다. 이제 data/topic.json 을
+   직접 읽는다.
+
+   토픽지수(TI)는 고광이·오승원·백장선(2020), 한국데이터정보과학회지
+   31(4) 579-594 의 정의를 따른다.
+       월별 토픽지수 = 해당 월 토픽 할당 단어 수 / 해당 월 전체 기사 수
+   기사 수만 세면 수집량이 늘어난 것이 '관심 증가'로 보인다. 분모에
+   기사 수를 두면 그 영향이 상쇄되고 기사 한 건당 관심도만 남는다. */
 const topicColors = [colors.blue, colors.red, colors.orange, colors.green, colors.purple];
 
-// 1) 토픽별 기사 수
-new Chart(document.getElementById('chart-topic-docs'), {
-  type: 'bar',
-  data: {
-    labels: topicLabels,
-    datasets: [{ label: '기사 수', data: [156, 161, 132, 199, 114], backgroundColor: topicColors, borderRadius: 4 }]
-  },
-  options: { responsive: true, plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, title: { display: true, text: '기사 수 (건)' } },
-              x: { ticks: { font: { size: 10 } } } } }
-});
+fetch('data/topic.json').then(r => r.json()).then(T => {
+  var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+  var labels = T.topics.map(function (t, i) {
+    return 'T' + (i + 1) + ' ' + t.keywords.slice(0, 2).join('·');
+  });
 
-// 2) 상위 키워드
-new Chart(document.getElementById('chart-keywords'), {
-  type: 'bar',
-  data: {
-    labels: ['위기','폐업','유동성','추석','대출','수출','경영난','연체','구조조정','연체율','자금난','부도'],
-    datasets: [{ label: '빈도', data: [156,128,126,120,94,92,90,88,80,76,70,52],
-      backgroundColor: ['#12A3A3','#12A3A3','#12A3A3','#FF8C42','#8FD4D0','#8FD4D0','#8FD4D0','#8FD4D0','#8FD4D0','#8FD4D0','#8FD4D0','#8FD4D0'],
-      borderRadius: 4 }]
-  },
-  options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
-    scales: { x: { beginAtZero: true, title: { display: true, text: '출현 빈도' } },
-              y: { ticks: { autoSkip: false, font: { size: 10 } } } } }
-});
+  set('n-news', T.n_articles.toLocaleString());
+  set('n-news2', T.n_articles.toLocaleString());
+  set('n-vocab', T.vocab_size.toLocaleString());
+  set('n-query', T.n_queries);
+  set('n-topic', T.topics.length);
 
-// 3) 월별 토픽 구성
-const months26 = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
-const topicMonthly = [
-  [0,1,2,9,4,15,18,28,25],
-  [4,3,3,3,3,7,10,18,9],
-  [2,2,1,8,0,1,4,13,73],
-  [1,5,8,11,9,10,32,25,32],
-  [0,6,0,3,6,5,11,8,5]
-];
-new Chart(document.getElementById('chart-topic-month'), {
-  type: 'bar',
-  data: {
-    labels: months26,
-    datasets: topicLabels.map((lab, i) => ({
-      label: lab, data: topicMonthly[i], backgroundColor: topicColors[i], borderRadius: 3
-    }))
-  },
-  options: { responsive: true,
-    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, title: { display: true, text: '기사 수 (건)' } } },
-    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } } }
-});
+  /* 1) 토픽별 기사 수 */
+  new Chart(document.getElementById('chart-topic-docs'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{ label: '기사 수',
+      data: T.topics.map(function (t) { return t.n_docs; }),
+      backgroundColor: topicColors, borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: function (c) {
+        return T.topics[c.dataIndex].keywords.slice(0, 6).join(', '); } } } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: '기사 수 (건)' } },
+                x: { ticks: { font: { size: 9 } } } } }
+  });
+
+  /* 2) 상위 키워드 */
+  var kw = T.top_keywords.slice(0, 12);
+  new Chart(document.getElementById('chart-keywords'), {
+    type: 'bar',
+    data: { labels: kw.map(function (k) { return k[0]; }),
+      datasets: [{ label: '빈도', data: kw.map(function (k) { return k[1]; }),
+        backgroundColor: kw.map(function (_, i) { return i < 3 ? colors.blue : '#8FD4D0'; }),
+        borderRadius: 4 }] },
+    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, title: { display: true, text: '출현 빈도' } },
+                y: { ticks: { autoSkip: false, font: { size: 10 } } } } }
+  });
+
+  /* 3) 월별 토픽 구성 — 건수 */
+  var mt = T.month_topic;
+  new Chart(document.getElementById('chart-topic-month'), {
+    type: 'bar',
+    data: { labels: mt.map(function (m) { return m[0]; }),
+      datasets: labels.map(function (lab, i) {
+        return { label: lab, data: mt.map(function (m) { return m[1][i]; }),
+                 backgroundColor: topicColors[i], borderRadius: 3 };
+      }) },
+    options: { responsive: true,
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true,
+        title: { display: true, text: '기사 수 (건)' } } },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } } }
+  });
+
+  /* 4) 토픽지수 — 수집량 보정 후의 상대 관심도 */
+  var ti = (T.topic_index || []).filter(function (r) { return r.t >= '2025-01'; });
+  var el = document.getElementById('chart-topic-index');
+  if (el && ti.length) {
+    new Chart(el, {
+      type: 'line',
+      data: { labels: ti.map(function (r) { return r.t; }),
+        datasets: labels.map(function (lab, i) {
+          return { label: lab, data: ti.map(function (r) { return r.ti[i]; }),
+                   borderColor: topicColors[i], backgroundColor: 'transparent',
+                   borderWidth: 2, pointRadius: 0, tension: .3 };
+        }) },
+      options: { responsive: true, interaction: { mode: 'index', intersect: false },
+        scales: { y: { beginAtZero: true, title: { display: true, text: '기사 1건당 해당 주제 단어 수' } },
+                  x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } } },
+        plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } } }
+    });
+    set('ti-months', ti.length);
+  }
+}).catch(function (e) { console.warn('topic.json 로드 실패', e); });
 
 // 4) 연체율
 /* ── 아래 세 차트는 analysis/collect_ecos.py 가 한국은행 ECOS 오픈API에서
@@ -1997,6 +2124,87 @@ Promise.all([
   redraw();
 }).catch(e => console.error('지역 데이터 로드 실패', e));
 
+
+/* ── 해지 타이밍 · 조치 우선순위 ───────────────────────────────
+   담당자가 실제로 묻는 것은 "어디가 위험한가"가 아니라
+   "누구에게, 언제, 무슨 말을 하느냐"다. nacham.json 의
+   applications(해지 신청 명세 집계)와 regions(지역 추정)를 묶어
+   그 세 가지를 한 화면에서 답한다. */
+fetch('data/nacham.json').then(r => r.json()).then(function (N) {
+  var set = function (id, v) { var e = document.getElementById(id); if (e) e.textContent = v; };
+  var won = function (n) { return n == null ? '—' : n.toLocaleString(); };
+  var A = N.applications;
+
+  if (A) {
+    set('nt-n', A.n.toLocaleString());
+    set('nt-1y', (A.within_1y * 100).toFixed(1) + '%');
+    var six = A.tenure[0];
+    set('nt-6m', (six.share * 100).toFixed(1) + '%');
+    set('nt-peak', A.peak_month);
+    set('nt-low', A.low_month);
+    set('nt-pe', won(A.monthly_pay.employee));
+    set('nt-pf', won(A.monthly_pay.firm));
+    set('nt-1yamt', won(A.monthly_pay.total * 12));
+
+    new Chart(document.getElementById('chart-nt-tenure'), {
+      type: 'bar',
+      data: { labels: A.tenure.map(function (t) { return t.label; }),
+        datasets: [{ label: '건수', data: A.tenure.map(function (t) { return t.n; }),
+          backgroundColor: A.tenure.map(function (t, i) { return i < 2 ? colors.red : colors.blue; }),
+          borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: function (c) {
+          return c.raw.toLocaleString() + '건 (' + (A.tenure[c.dataIndex].share * 100).toFixed(1) + '%)'; } } } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: '해지 건수' } },
+                  x: { ticks: { font: { size: 10 } } } } }
+    });
+
+    new Chart(document.getElementById('chart-nt-season'), {
+      type: 'bar',
+      data: { labels: A.season.map(function (x) { return x.m + '월'; }),
+        datasets: [{ label: '비중', data: A.season.map(function (x) { return +(x.share * 100).toFixed(2); }),
+          backgroundColor: A.season.map(function (x) {
+            return x.m === A.peak_month ? colors.red : x.m === A.low_month ? colors.gray : colors.teal; }),
+          borderRadius: 4 }] },
+      options: { responsive: true, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: '전체 중 비중 (%)' } },
+                  x: { ticks: { font: { size: 10 } } } } }
+    });
+  }
+
+  /* 지역별 주된 신호를 판별해 권고 조치를 붙인다 */
+  var host = document.getElementById('nt-action');
+  if (host && N.regions) {
+    var rs = N.regions.filter(function (r) { return r.score !== null; }).slice(0, 8);
+    var vals = function (key) { return N.regions.map(function (r) { return r[key]; })
+      .filter(function (v) { return v != null; }); };
+    var z = function (v, arr) {
+      if (v == null || arr.length < 2) return -9;
+      var mu = arr.reduce(function (a, b) { return a + b; }, 0) / arr.length;
+      var sd = Math.sqrt(arr.reduce(function (a, b) { return a + (b - mu) * (b - mu); }, 0) / arr.length);
+      return sd ? (v - mu) / sd : 0;
+    };
+    var Q = vals('quit_rate'), L = vals('layoff_rate'), D = vals('delinq');
+    var PLAN = {
+      '인력 이탈형': ['근로자 대상 재직 유인 안내', '#12A3A3'],
+      '기업 부실형': ['기업 대상 정책자금·납입유예 연계', '#E74C3C'],
+      '고용 조정형': ['권고사직 진행 가능 — 조기 접촉', '#E0912F']
+    };
+    host.innerHTML = rs.map(function (r, i) {
+      var zq = z(r.quit_rate, Q), zl = z(r.layoff_rate, L), zd = z(r.delinq, D);
+      var kind = (zq >= zl && zq >= zd) ? '인력 이탈형'
+               : (zd >= zl) ? '기업 부실형' : '고용 조정형';
+      var p = PLAN[kind];
+      return '<tr><td style="text-align:center">' + (i + 1) + '</td>' +
+        '<td style="font-weight:600">' + r.name + '</td>' +
+        '<td style="text-align:center">' + r.score.toFixed(2) +
+          '<div class="corr-grp">' + r.band + '</div></td>' +
+        '<td style="text-align:center"><span style="display:inline-block;padding:2px 9px;border-radius:4px;' +
+          'font-size:11.5px;font-weight:700;color:#fff;background:' + p[1] + '">' + kind + '</span></td>' +
+        '<td>' + p[0] + '</td></tr>';
+    }).join('');
+  }
+}).catch(function (e) { console.warn('nacham.json(타이밍) 로드 실패', e); });
 
 /* ── 화면 이동 ─────────────────────────────────────────────
    상단 탭 = 항목(chapter), 좌측 목록 = 그 항목의 화면.
